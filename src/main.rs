@@ -1,4 +1,4 @@
-use std::process::{Child, Command};
+use std::process::Command;
 
 use tungstenite::{connect, Message};
 use url::Url;
@@ -22,7 +22,6 @@ impl ::std::default::Default for SeederConfig {
 }
 
 fn main() {
-    let mut game: Option<Child> = None;
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!("ws://seeder.gametools.network:5252/ws/seeder?groupid={}", cfg.group_id);
@@ -39,7 +38,7 @@ fn main() {
             if &deserialized.action[..] == "joinServer" {
                 let game_id = &deserialized.gameid[..];
                 println!("joining id: {}", game_id);
-                game = Some(Command::new(cfg.game_location.clone()).args([
+                Command::new(cfg.game_location.clone()).args([
                     "-webMode",
                     "MP",
                     "-Origin_NoAppFocus",
@@ -53,12 +52,16 @@ fn main() {
                     "-role",
                     "soldier",
                     "-asSpectator",
-                ]).spawn().unwrap());
+                ]).spawn().unwrap();
             } else {
                 println!("Quitting game..");
-                match game {
-                    Some(ref mut process) => process.kill().unwrap(),
-                    None => println!("No game to quit!")
+                let game_process = winproc::Process::from_name("bf1.exe");
+                match game_process {
+                    Ok(mut process) => {
+                        process.terminate(1).unwrap();
+                        println!("closed the game");
+                    },
+                    Err(_) => {println!("no game process found!");},
                 }
             }
         }
