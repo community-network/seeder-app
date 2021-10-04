@@ -1,15 +1,3 @@
-//! A simple example of hooking up stdin/stdout to a WebSocket stream.
-//!
-//! This example will connect to a server specified in the argument list and
-//! then forward all data read on stdin to the server, printing out all data
-//! received on stdout.
-//!
-//! Note that this is not currently optimized for performance, especially around
-//! buffer management. Rather it's intended to show an example of working with a
-//! client.
-//!
-//! You can use this example together with the `server` example.
-
 use std::process::Command;
 
 use futures_util::{future, pin_mut, StreamExt};
@@ -23,9 +11,23 @@ struct BroadcastMessage {
     gameid: String,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+struct SeederConfig {
+    group_id: String,
+    game_location: String,
+}
+
+/// `SeederConfig` implements `Default`
+impl ::std::default::Default for SeederConfig {
+    fn default() -> Self { Self { group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(), game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".into() } }
+}
+
+
 #[tokio::main]
 async fn main() {
-    let connect_addr = "ws://seeder.gametools.network:5252/ws/seeder?groupid=0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".to_string();
+    let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
+    confy::store_path("config.txt", cfg.clone()).unwrap();
+    let connect_addr = format!("ws://seeder.gametools.network:5252/ws/seeder?groupid={}", cfg.group_id);
 
     let url = url::Url::parse(&connect_addr).unwrap();
 
@@ -44,7 +46,7 @@ async fn main() {
             let data = message.unwrap();
 			if matches!(data.clone(), Message::Text(_string)) {
 				let deserialized: BroadcastMessage = serde_json::from_str(&data.into_text().unwrap()[..]).unwrap();
-				let game: &str = "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe";
+				let game = cfg.game_location.clone();
                 let game_id = &deserialized.gameid[..];
                 println!("joining id: {}", game_id);
 				let _command = Command::new(game).args([
