@@ -58,8 +58,10 @@ fn main() {
                 let game_process = winproc::Process::from_name("bf1.exe");
                 match game_process {
                     Ok(mut process) => {
-                        process.terminate(1).unwrap();
-                        println!("closed the game");
+                        match process.terminate(1) {
+                            Ok(_) =>  println!("closed the game"),
+                            Err(e) => println!("failed to close game (likely permissions): {}", e)
+                        }
                     },
                     Err(_) => {println!("no game process found!");},
                 }
