@@ -678,6 +678,7 @@ dependencies = [
  "tokio-tungstenite",
  "url",
  "winproc",
+ "winput",
 ]
 
 [[package]]
@@ -938,5 +939,14 @@ dependencies = [
  "bitflags",
  "failure",
  "widestring",
+ "winapi",
+]
+
+[[package]]
+name = "winput"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd4bec39938e0ae68b300e2a4197b6437f13d53d1c146c6e297e346a71d5dde9"
+dependencies = [
  "winapi",
 ]
