@@ -1,7 +1,6 @@
 use tokio::process::Command;
 use futures_util::{future, pin_mut, StreamExt};
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
-use winput::Vk;
 #[macro_use] extern crate serde_derive;
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,13 +62,7 @@ async fn main() {
                         "soldier",
                         "-asSpectator",
                     ]).spawn() {
-                        Ok(_) => {
-                            println!("game launched");
-                            match Command::new("BF1Idle2.0Seeder_1.exe").spawn() {
-                                Ok(_) => println!("Launched anti-afk script"),
-                                Err(e) => println!("Failed to launch anti-afk: {}", e)
-                            }
-                        },
+                        Ok(_) => println!("game launched"),
                         Err(e) => println!("failed to launch game: {}", e)
                     }
                 } else {
@@ -83,16 +76,6 @@ async fn main() {
                             }
                         },
                         Err(_) => {println!("no game process found!");},
-                    }
-                    let idle_process = winproc::Process::from_name("BF1Idle2.0Seeder_1.exe");
-                    match idle_process  {
-                        Ok(_) => {
-                            println!("closing anti-afk");
-                            winput::press(Vk::Control);
-                            winput::send(Vk::Q);
-                            winput::release(Vk::Control);
-                        },
-                        Err(_) => println!("no anti-afk process found")
                     }
                 }
 			}
