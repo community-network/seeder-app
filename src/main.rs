@@ -53,7 +53,7 @@ fn web_client() -> Result<(), &'static str> {
     // anti afk thread, runs when game is running
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
-            let window_name = CString::new("Battlefield™").unwrap();
+            let window_name = CString::new("Battlefield™ 1").unwrap();
             unsafe {
                 let window_handle = FindWindowA(std::ptr::null_mut(), window_name.as_ptr());
                 SetForegroundWindow(window_handle);
