@@ -8,9 +8,7 @@ authors = ["iiTzArcur <arcur@gametools.network>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-futures-util = "0.3.17"
-tokio = { version = "1.7", features = ["full"] }
-tokio-tungstenite = "0.15.0"
+tungstenite = "0.15.0"
 url = "2.2.2"
 futures-channel = "0.3.17"
 serde = "1.0.130"
