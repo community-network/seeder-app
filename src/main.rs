@@ -1,3 +1,6 @@
+use std::ffi::OsStr;
+use std::iter::once;
+use std::os::windows::prelude::OsStrExt;
 use std::process::Command;
 use std::{
     ffi::CString,
@@ -8,9 +11,7 @@ use std::{
 };
 use tungstenite::{connect, Message};
 use url::Url;
-use winapi::um::winuser::{
-    FindWindowA, SendInput, SetForegroundWindow, ShowWindow, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP,
-};
+use winapi::um::winuser::{FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
 #[macro_use]
 extern crate serde_derive;
 
@@ -53,9 +54,9 @@ fn web_client() -> Result<(), &'static str> {
     // anti afk thread, runs when game is running
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
-            let window_name = CString::new("Battlefield™ 1").unwrap();
+            let window: Vec<u16> = OsStr::new("Battlefield™ 1").encode_wide().chain(once(0)).collect();
             unsafe {
-                let window_handle = FindWindowA(std::ptr::null_mut(), window_name.as_ptr());
+                let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
                 SetForegroundWindow(window_handle);
                 ShowWindow(window_handle, 9);
                 sleep(Duration::from_millis(1808));
