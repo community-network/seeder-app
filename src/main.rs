@@ -20,12 +20,12 @@ impl ::std::default::Default for SeederConfig {
     fn default() -> Self { Self { group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(), game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".into() } }
 }
 
-// "ws://seeder.gametools.network:5252/ws/seeder?groupid={}
+// "ws://localhost:5051/ws/seeder?groupid={}"
 #[tokio::main]
 async fn main() {
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
     confy::store_path("config.txt", cfg.clone()).unwrap();
-    let connect_addr = format!("ws://localhost:5051/ws/seeder?groupid={}", cfg.group_id);
+    let connect_addr = format!("ws://seeder.gametools.network:5252/ws/seeder?groupid={}", cfg.group_id);
 
     let url = url::Url::parse(&connect_addr).unwrap();
 
