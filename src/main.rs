@@ -69,77 +69,89 @@ fn web_client() -> Result<(), &'static str> {
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
     confy::store_path("config.txt", cfg.clone()).unwrap();
-    let connect_addr = format!("ws://seeder.gametools.network:5252/ws/seeder?groupid={}", cfg.group_id);
+    let connect_addr = format!(
+        "ws://seeder.gametools.network:5252/ws/seeder?groupid={}",
+        cfg.group_id
+    );
 
-    let (mut socket, _response) =
-        connect(Url::parse(&connect_addr[..]).unwrap()).expect("Can't connect");
-    println!("WebSocket handshake has been successfully completed");
-    println!("Connected to the server with group id: {}", cfg.group_id);
-    println!("Using game in location: {}", cfg.game_location);
-    loop {
-        match socket.read_message() {
-            Ok(msg) => {
-                if matches!(msg.clone(), Message::Text(_string)) {
-                    if matches!(msg.clone(), Message::Text(_string)) {
-                        let deserialized: BroadcastMessage =
-                            serde_json::from_str(&msg.into_text().unwrap()[..]).unwrap();
-                        if &deserialized.action[..] == "joinServer" {
-                            let game_id = &deserialized.gameid[..];
-                            println!("joining id: {}", game_id);
-                            match Command::new(cfg.game_location.clone())
-                                .args([
-                                    "-webMode",
-                                    "MP",
-                                    "-Origin_NoAppFocus",
-                                    "--activate-webhelper",
-                                    "-requestState",
-                                    "State_ClaimReservation",
-                                    "-gameId",
-                                    game_id,
-                                    "-gameMode",
-                                    "MP",
-                                    "-role",
-                                    "soldier",
-                                    "-asSpectator",
-                                ])
-                                .spawn()
-                            {
-                                Ok(_) => println!("game launched"),
-                                Err(e) => println!("failed to launch game: {}", e),
-                            }
-                            // game state == running game
-                            game_running.store(1, atomic::Ordering::Relaxed);
-                        } else {
-                            println!("Quitting game..");
-                            let game_process = winproc::Process::from_name("bf1.exe");
-                            match game_process {
-                                Ok(mut process) => match process.terminate(1) {
-                                    Ok(_) => println!("closed the game"),
-                                    Err(e) => {
-                                        println!("failed to close game (likely permissions): {}", e)
+    // let (mut socket, _response) =
+    match connect(Url::parse(&connect_addr[..]).unwrap()) {
+        Ok((mut socket, _response)) => {
+            println!("WebSocket handshake has been successfully completed");
+            println!("Connected to the server with group id: {}", cfg.group_id);
+            println!("Using game in location: {}", cfg.game_location);
+            loop {
+                match socket.read_message() {
+                    Ok(msg) => {
+                        if matches!(msg.clone(), Message::Text(_string)) {
+                            if matches!(msg.clone(), Message::Text(_string)) {
+                                let deserialized: BroadcastMessage =
+                                    serde_json::from_str(&msg.into_text().unwrap()[..]).unwrap();
+                                if &deserialized.action[..] == "joinServer" {
+                                    let game_id = &deserialized.gameid[..];
+                                    println!("joining id: {}", game_id);
+                                    match Command::new(cfg.game_location.clone())
+                                        .args([
+                                            "-webMode",
+                                            "MP",
+                                            "-Origin_NoAppFocus",
+                                            "--activate-webhelper",
+                                            "-requestState",
+                                            "State_ClaimReservation",
+                                            "-gameId",
+                                            game_id,
+                                            "-gameMode",
+                                            "MP",
+                                            "-role",
+                                            "soldier",
+                                            "-asSpectator",
+                                        ])
+                                        .spawn()
+                                    {
+                                        Ok(_) => println!("game launched"),
+                                        Err(e) => println!("failed to launch game: {}", e),
                                     }
-                                },
-                                Err(_) => {
-                                    println!("no game process found!");
+                                    // game state == running game
+                                    game_running.store(1, atomic::Ordering::Relaxed);
+                                } else {
+                                    println!("Quitting game..");
+                                    let game_process = winproc::Process::from_name("bf1.exe");
+                                    match game_process {
+                                        Ok(mut process) => {
+                                            match process.terminate(1) {
+                                                Ok(_) => println!("closed the game"),
+                                                Err(e) => {
+                                                    println!("failed to close game (likely permissions): {}", e)
+                                                }
+                                            }
+                                        }
+                                        Err(_) => {
+                                            println!("no game process found!");
+                                        }
+                                    }
+                                    // game state == no game
+                                    game_running.store(0, atomic::Ordering::Relaxed);
                                 }
+                            } else if matches!(msg.clone(), Message::Ping(_)) {
+                                match socket.write_message(Message::Pong(msg.into_data())) {
+                                    Ok(_) => {}
+                                    Err(e) => println!("Failed to send pong: {}", e),
+                                }
+                            } else {
+                                println!("{:#?}", msg.clone());
                             }
-                            // game state == no game
-                            game_running.store(0, atomic::Ordering::Relaxed);
                         }
-                    } else if matches!(msg.clone(), Message::Ping(_)) {
-                        match socket.write_message(Message::Pong(msg.into_data())) {
-                            Ok(_) => {}
-                            Err(e) => println!("Failed to send pong: {}", e),
-                        }
-                    } else {
-                        println!("{:#?}", msg.clone());
+                    }
+                    Err(e) => {
+                        println!("{}", e);
+                        return Err("Restarting...");
                     }
                 }
             }
-            Err(e) => {
-                println!("{}", e);
-                return Err("Restarting...")
-            }
+        }
+        Err(e) => {
+            println!("{}", e);
+            return Err("Restarting...");
         }
     }
 }
