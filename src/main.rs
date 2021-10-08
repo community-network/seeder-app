@@ -64,17 +64,18 @@ fn web_client() -> Result<(), &'static str> {
             unsafe {
                 let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
                 let no_game: *mut HWND__ = ptr::null_mut();
-                if window_handle != no_game { // if game is not running
+                if window_handle != no_game {
+                    // if game is not running
                     SetForegroundWindow(window_handle);
                     ShowWindow(window_handle, 9);
                     sleep(Duration::from_millis(1808));
                     key_enter(0x45);
                     sleep(Duration::from_millis(100));
                     ShowWindow(window_handle, 6);
-                    sleep(Duration::from_millis(120000));
                 }
             }
         }
+        sleep(Duration::from_millis(120000));
     });
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
