@@ -9,8 +9,6 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
-use tungstenite::{connect, Message};
-use url::Url;
 use winapi::shared::windef::HWND__;
 use winapi::um::winuser::{
     FindWindowW, SendInput, SetForegroundWindow, ShowWindow, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP,
@@ -30,6 +28,15 @@ struct SeederConfig {
     game_location: String,
 }
 
+#[derive(Deserialize, PartialEq, Clone, Debug)]
+struct CurrentServer {
+    #[serde(rename = "gameId")]
+    game_id: String,
+    #[serde(rename = "groupId")]
+    group_id: String,
+    action: String
+}
+
 /// `SeederConfig` implements `Default`
 impl ::std::default::Default for SeederConfig {
     fn default() -> Self {
@@ -43,15 +50,6 @@ impl ::std::default::Default for SeederConfig {
 // "ws://localhost:5051/ws/seeder?groupid={}"
 // "ws://seeder.gametools.network:5252/ws/seeder?groupid={}"
 fn main() {
-    loop {
-        match web_client() {
-            Ok(_) => {}
-            Err(e) => println!("{:#?}", e),
-        };
-    }
-}
-
-fn web_client() -> Result<(), &'static str> {
     let game_running = Arc::new(atomic::AtomicU32::new(0));
     let game_running_clone = Arc::clone(&game_running);
     // anti afk thread, runs when game is in "joined" state
@@ -79,53 +77,23 @@ fn web_client() -> Result<(), &'static str> {
     });
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
+    let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone()};
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!(
-        "ws://seeder.gametools.network:5252/ws/seeder?groupid={}",
+        "http://seeder.gametools.network:5252/api/getseeder?groupid={}",
         cfg.group_id
     );
-
-    // let (mut socket, _response) =
-    match connect(Url::parse(&connect_addr[..]).unwrap()) {
-        Ok((mut socket, _response)) => {
-            println!("WebSocket handshake has been successfully completed");
-            println!("Connected to the server with group id: {}", cfg.group_id);
-            println!("Using game in location: {}", cfg.game_location);
-            loop {
-                match socket.read_message() {
-                    Ok(msg) => {
-                        if matches!(msg.clone(), Message::Text(_string)) {
-                            if matches!(msg.clone(), Message::Text(_string)) {
-                                let deserialized: BroadcastMessage =
-                                    serde_json::from_str(&msg.into_text().unwrap()[..]).unwrap();
-                                if &deserialized.action[..] == "joinServer" {
-                                    let game_id = &deserialized.gameid[..];
-                                    println!("joining id: {}", game_id);
-                                    match Command::new(cfg.game_location.clone())
-                                        .args([
-                                            "-webMode",
-                                            "MP",
-                                            "-Origin_NoAppFocus",
-                                            "--activate-webhelper",
-                                            "-requestState",
-                                            "State_ClaimReservation",
-                                            "-gameId",
-                                            game_id,
-                                            "-gameMode",
-                                            "MP",
-                                            "-role",
-                                            "soldier",
-                                            "-asSpectator",
-                                        ])
-                                        .spawn()
-                                    {
-                                        Ok(_) => println!("game launched"),
-                                        Err(e) => println!("failed to launch game: {}", e),
-                                    }
-                                    // game state == running game
-                                    game_running.store(1, atomic::Ordering::Relaxed);
-                                } else {
-                                    println!("Quitting game..");
+    println!("firing of latest request found (default on startup script)");
+    loop {
+        match ureq::get(&connect_addr[..]).call() {
+            Ok(response) => {
+                match response.into_json::<CurrentServer>() {
+                    Ok(seeder_info) => {
+                        if seeder_info != old_seeder_info {
+                            if &seeder_info.action[..] == "joinServer" {
+                                // remove old session when switching to fast
+                                if &old_seeder_info.game_id[..] != &seeder_info.game_id[..] && &old_seeder_info.action[..] == "joinServer" {
+                                    println!("Quitting old session..");
                                     let game_process = winproc::Process::from_name("bf1.exe");
                                     match game_process {
                                         Ok(mut process) => {
@@ -140,30 +108,66 @@ fn web_client() -> Result<(), &'static str> {
                                             println!("no game process found!");
                                         }
                                     }
-                                    // game state == no game
-                                    game_running.store(0, atomic::Ordering::Relaxed);
                                 }
-                            } else if matches!(msg.clone(), Message::Ping(_)) {
-                                match socket.write_message(Message::Pong(msg.into_data())) {
-                                    Ok(_) => {}
-                                    Err(e) => println!("Failed to send pong: {}", e),
+
+
+                                let game_id = &seeder_info.game_id[..];
+                                println!("joining id: {}", game_id);
+                                match Command::new(cfg.game_location.clone())
+                                    .args([
+                                        "-webMode",
+                                        "MP",
+                                        "-Origin_NoAppFocus",
+                                        "--activate-webhelper",
+                                        "-requestState",
+                                        "State_ClaimReservation",
+                                        "-gameId",
+                                        game_id,
+                                        "-gameMode",
+                                        "MP",
+                                        "-role",
+                                        "soldier",
+                                        "-asSpectator",
+                                    ])
+                                    .spawn()
+                                {
+                                    Ok(_) => println!("game launched"),
+                                    Err(e) => println!("failed to launch game: {}", e),
                                 }
+                                // game state == running game
+                                game_running.store(1, atomic::Ordering::Relaxed);
                             } else {
-                                println!("{:#?}", msg.clone());
+                                println!("Quitting game..");
+                                let game_process = winproc::Process::from_name("bf1.exe");
+                                match game_process {
+                                    Ok(mut process) => {
+                                        match process.terminate(1) {
+                                            Ok(_) => println!("closed the game"),
+                                            Err(e) => {
+                                                println!("failed to close game (likely permissions): {}", e)
+                                            }
+                                        }
+                                    }
+                                    Err(_) => {
+                                        println!("no game process found!");
+                                    }
+                                }
+                                // game state == no game
+                                game_running.store(0, atomic::Ordering::Relaxed);
                             }
+                            old_seeder_info = seeder_info.clone();
                         }
-                    }
+                    },
                     Err(e) => {
-                        println!("{}", e);
-                        return Err("Restarting...");
+                        println!("Failed to get info about server to join: {}", e)
                     }
                 }
-            }
+            },
+            Err(e) => {
+                println!("Failed to connect to backend: {}", e);
+            },
         }
-        Err(e) => {
-            println!("{}", e);
-            return Err("Restarting...");
-        }
+        sleep(Duration::from_secs(10));
     }
 }
 
