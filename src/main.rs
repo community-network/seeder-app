@@ -2,6 +2,7 @@ use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::prelude::OsStrExt;
 use std::process::Command;
+use std::ptr;
 use std::{
     mem,
     sync::{atomic, Arc},
@@ -10,6 +11,7 @@ use std::{
 };
 use tungstenite::{connect, Message};
 use url::Url;
+use winapi::shared::windef::HWND__;
 use winapi::um::winuser::{
     FindWindowW, SendInput, SetForegroundWindow, ShowWindow, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP,
 };
@@ -52,7 +54,7 @@ fn main() {
 fn web_client() -> Result<(), &'static str> {
     let game_running = Arc::new(atomic::AtomicU32::new(0));
     let game_running_clone = Arc::clone(&game_running);
-    // anti afk thread, runs when game is running
+    // anti afk thread, runs when game is in "joined" state
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
             let window: Vec<u16> = OsStr::new("Battlefield™ 1")
@@ -61,15 +63,19 @@ fn web_client() -> Result<(), &'static str> {
                 .collect();
             unsafe {
                 let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
-                SetForegroundWindow(window_handle);
-                ShowWindow(window_handle, 9);
-                sleep(Duration::from_millis(1808));
-                key_enter(0x45);
-                sleep(Duration::from_millis(100));
-                ShowWindow(window_handle, 6);
-                sleep(Duration::from_millis(120000));
+                let no_game: *mut HWND__ = ptr::null_mut();
+                if window_handle != no_game {
+                    // if game is not running
+                    SetForegroundWindow(window_handle);
+                    ShowWindow(window_handle, 9);
+                    sleep(Duration::from_millis(1808));
+                    key_enter(0x45);
+                    sleep(Duration::from_millis(100));
+                    ShowWindow(window_handle, 6);
+                }
             }
         }
+        sleep(Duration::from_millis(120000));
     });
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
