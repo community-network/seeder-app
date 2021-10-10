@@ -16,3 +16,4 @@ serde_derive = "1.0.130"
 confy = "0.4.0"
 winproc = "0.6.4"
 winapi = { version = "0.3.9", features = ["winuser"] }
+ureq = { version = "2.2.0", features = ["json"] }
