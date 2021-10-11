@@ -39,6 +39,11 @@ struct CurrentServer {
     action: String
 }
 
+struct GameInfo {
+    is_running: bool,
+    game_process: *mut HWND__
+}
+
 /// `SeederConfig` implements `Default`
 impl ::std::default::Default for SeederConfig {
     fn default() -> Self {
@@ -58,21 +63,16 @@ fn main() {
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
             println!("test");
-            let window: Vec<u16> = OsStr::new("Battlefield™ 1")
-                .encode_wide()
-                .chain(once(0))
-                .collect();
-            unsafe {
-                let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
-                let no_game: *mut HWND__ = ptr::null_mut();
-                if window_handle != no_game {
+            let game_info = is_running();
+            if game_info.is_running {
+                unsafe {
                     // if game is not running
-                    SetForegroundWindow(window_handle);
-                    ShowWindow(window_handle, 9);
+                    SetForegroundWindow(game_info.game_process);
+                    ShowWindow(game_info.game_process, 9);
                     sleep(Duration::from_millis(1808));
                     key_enter(0x45);
                     sleep(Duration::from_millis(100));
-                    ShowWindow(window_handle, 6);
+                    ShowWindow(game_info.game_process, 6);
                 }
             }
         }
@@ -97,71 +97,25 @@ fn main() {
                             if &seeder_info.action[..] == "joinServer" {
                                 // remove old session when switching to fast
                                 if &old_seeder_info.game_id[..] != &seeder_info.game_id[..] && &old_seeder_info.action[..] == "joinServer" {
-                                    println!("Quitting old session..");
-                                    let game_process = winproc::Process::from_name("bf1.exe");
-                                    match game_process {
-                                        Ok(mut process) => {
-                                            match process.terminate(1) {
-                                                Ok(_) => println!("closed the game"),
-                                                Err(e) => {
-                                                    println!("failed to close game (likely permissions): {}", e)
-                                                }
-                                            }
-                                        }
-                                        Err(_) => {
-                                            println!("no game process found!");
-                                        }
-                                    }
+                                    quit_game();
                                 }
-
-
-                                let game_id = &seeder_info.game_id[..];
-                                println!("joining id: {}", game_id);
-                                match Command::new(cfg.game_location.clone())
-                                    .args([
-                                        "-webMode",
-                                        "MP",
-                                        "-Origin_NoAppFocus",
-                                        "--activate-webhelper",
-                                        "-requestState",
-                                        "State_ClaimReservation",
-                                        "-gameId",
-                                        game_id,
-                                        "-gameMode",
-                                        "MP",
-                                        "-role",
-                                        "soldier",
-                                        "-asSpectator",
-                                    ])
-                                    .spawn()
-                                {
-                                    Ok(_) => println!("game launched"),
-                                    Err(e) => println!("failed to launch game: {}", e),
-                                }
+                                launch_game(&cfg, &seeder_info);
                                 // game state == running game
                                 game_running.store(1, atomic::Ordering::Relaxed);
                             } else {
-                                println!("Quitting game..");
-                                let game_process = winproc::Process::from_name("bf1.exe");
-                                match game_process {
-                                    Ok(mut process) => {
-                                        match process.terminate(1) {
-                                            Ok(_) => println!("closed the game"),
-                                            Err(e) => {
-                                                println!("failed to close game (likely permissions): {}", e)
-                                            }
-                                        }
-                                    }
-                                    Err(_) => {
-                                        println!("no game process found!");
-                                    }
-                                }
+                                quit_game();
                                 // game state == no game
                                 game_running.store(0, atomic::Ordering::Relaxed);
                             }
                             old_seeder_info = seeder_info.clone();
                         } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
                             println!("request older than a hour, not running latest request.")
+                        } else {
+                            let game_info = is_running();
+                            if game_info.is_running && &seeder_info.action[..] == "joinServer" {
+                                println!("didn't find game running, starting..");
+                                launch_game(&cfg, &seeder_info);
+                            }
                         }
                     },
                     Err(e) => {
@@ -176,6 +130,62 @@ fn main() {
             },
         }
         sleep(Duration::from_secs(10));
+    }
+}
+
+fn is_running() -> GameInfo {
+    unsafe {
+        let window: Vec<u16> = OsStr::new("Battlefield™ 1")
+            .encode_wide()
+            .chain(once(0))
+            .collect();
+        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
+        let no_game: *mut HWND__ = ptr::null_mut();
+        GameInfo{ is_running: window_handle != no_game, game_process: window_handle }
+    }
+}
+
+fn quit_game() {
+    println!("Quitting old session..");
+    let game_process = winproc::Process::from_name("bf1.exe");
+    match game_process {
+        Ok(mut process) => {
+            match process.terminate(1) {
+                Ok(_) => println!("closed the game"),
+                Err(e) => {
+                    println!("failed to close game (likely permissions): {}", e)
+                }
+            }
+        }
+        Err(_) => {
+            println!("no game process found!");
+        }
+    }
+}
+
+fn launch_game(cfg: &SeederConfig, seeder_info: &CurrentServer) {
+    let game_id = &seeder_info.game_id[..];
+    println!("joining id: {}", game_id);
+    match Command::new(cfg.game_location.clone())
+        .args([
+            "-webMode",
+            "MP",
+            "-Origin_NoAppFocus",
+            "--activate-webhelper",
+            "-requestState",
+            "State_ClaimReservation",
+            "-gameId",
+            game_id,
+            "-gameMode",
+            "MP",
+            "-role",
+            "soldier",
+            "-asSpectator",
+        ])
+        .spawn()
+    {
+        Ok(_) => println!("game launched"),
+        Err(e) => println!("failed to launch game: {}", e),
     }
 }
 
