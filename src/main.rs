@@ -152,7 +152,7 @@ fn quit_game() {
             match process.terminate(1) {
                 Ok(_) => println!("closed the game"),
                 Err(e) => {
-                    println!("failed to close game (likely permissions): {}", e)
+                    println!("failed to close game (likely permissions): {}", e);
                 }
             }
         }
