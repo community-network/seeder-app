@@ -10,9 +10,7 @@ use std::{
     time::Duration,
 };
 use winapi::shared::windef::HWND__;
-use winapi::um::winuser::{
-    FindWindowW, SendInput, SetForegroundWindow, ShowWindow, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP,
-};
+use winapi::um::winuser::{ExitWindowsEx, FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
 #[macro_use]
 extern crate serde_derive;
 
@@ -26,6 +24,8 @@ struct BroadcastMessage {
 struct SeederConfig {
     group_id: String,
     game_location: String,
+    hostname: String,
+    allow_shutdown: bool
 }
 
 #[derive(Deserialize, PartialEq, Clone, Debug)]
@@ -48,8 +48,10 @@ struct GameInfo {
 impl ::std::default::Default for SeederConfig {
     fn default() -> Self {
         Self {
+            hostname: hostname::get().unwrap().into_string().unwrap(),
             group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
             game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".into(),
+            allow_shutdown: false
         }
     }
 }
@@ -77,7 +79,7 @@ fn main() {
         }
         sleep(Duration::from_secs(120));
     });
-
+    
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
     let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp()};
     confy::store_path("config.txt", cfg.clone()).unwrap();
@@ -91,6 +93,7 @@ fn main() {
             Ok(response) => {
                 match response.into_json::<CurrentServer>() {
                     Ok(seeder_info) => {
+                        let game_info = is_running();
                         let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp()-3600; // if it is older than 1 hour, dont try to run
                         if seeder_info.timestamp != old_seeder_info.timestamp && !a_hour {
                             if &seeder_info.action[..] == "joinServer" {
@@ -101,6 +104,10 @@ fn main() {
                                 launch_game(&cfg, &seeder_info);
                                 // game state == running game
                                 game_running.store(1, atomic::Ordering::Relaxed);
+                            } else if &seeder_info.action[..] == "shutdownPC"  && cfg.allow_shutdown {
+                                unsafe {
+                                    ExitWindowsEx(0x00000001, 0x80000000);
+                                }
                             } else {
                                 quit_game();
                                 // game state == no game
@@ -109,12 +116,13 @@ fn main() {
                         } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
                             println!("request older than a hour, not running latest request.")
                         } else {
-                            let game_info = is_running();
-                            if !game_info.is_running && &seeder_info.action[..] == "joinServer" {
+                            // TODO: add auto-rejoin disable/enable
+                            if !&game_info.is_running && &seeder_info.action[..] == "joinServer" {
                                 println!("didn't find game running, starting..");
                                 launch_game(&cfg, &seeder_info);
                             }
                         }
+                        ping_backend(&cfg, &game_info);
                         old_seeder_info = seeder_info.clone();
                     },
                     Err(e) => {
@@ -129,6 +137,17 @@ fn main() {
             },
         }
         sleep(Duration::from_secs(10));
+    }
+}
+
+fn ping_backend(cfg: &SeederConfig, game_info: &GameInfo) {
+    match ureq::post("http://seeder.gametools.network:5252/api/seederinfo").send_json(ureq::json!({
+        "groupid": cfg.group_id,
+        "isrunning": game_info.is_running,
+        "hostname": cfg.hostname
+    })) {
+        Ok(_) => {},
+        Err(_) => println!("Couln't send update of client to backend")
     }
 }
 
