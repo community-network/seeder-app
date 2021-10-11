@@ -79,8 +79,20 @@ fn main() {
         }
         sleep(Duration::from_secs(120));
     });
+    let cfg: SeederConfig = match confy::load_path("config.txt") {
+        Ok(config) => config,
+        Err(e) => {
+            println!("error in config.txt: {}", e);
+            println!("changing back to default..");
+            SeederConfig {
+                hostname: hostname::get().unwrap().into_string().unwrap(),
+                group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
+                game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".into(),
+                allow_shutdown: false
+            }
+        }
+    };
     
-    let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
     let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp()};
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!(
