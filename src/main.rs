@@ -108,6 +108,7 @@ fn main() {
                     Ok(seeder_info) => {
                         let game_info = is_running();
                         let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp()-3600; // if it is older than 1 hour, dont try to run
+                        let a_minute = seeder_info.timestamp < chrono::Utc::now().timestamp()-60;
                         if seeder_info.timestamp != old_seeder_info.timestamp && !a_hour {
                             if &seeder_info.action[..] == "joinServer" {
                                 // remove old session when switching to fast
@@ -117,7 +118,7 @@ fn main() {
                                 launch_game(&cfg, &seeder_info);
                                 // game state == running game
                                 game_running.store(1, atomic::Ordering::Relaxed);
-                            } else if &seeder_info.action[..] == "shutdownPC"  && cfg.allow_shutdown {
+                            } else if &seeder_info.action[..] == "shutdownPC"  && cfg.allow_shutdown && !a_minute {
                                 match shutdown() {
                                     Ok(_) => println!("Shutting down, bye!"),
                                     Err(error) => eprintln!("Failed to shut down: {}", error),
