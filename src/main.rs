@@ -9,9 +9,9 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
+use system_shutdown::shutdown;
 use winapi::shared::windef::HWND__;
-use winapi::um::reason::SHTDN_REASON_MAJOR_OPERATINGSYSTEM;
-use winapi::um::winuser::{EWX_SHUTDOWN, ExitWindowsEx, FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
+use winapi::um::winuser::{FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
 #[macro_use]
 extern crate serde_derive;
 
