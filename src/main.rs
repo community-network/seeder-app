@@ -10,7 +10,8 @@ use std::{
     time::Duration,
 };
 use winapi::shared::windef::HWND__;
-use winapi::um::winuser::{ExitWindowsEx, FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
+use winapi::um::reason::SHTDN_REASON_MAJOR_OPERATINGSYSTEM;
+use winapi::um::winuser::{EWX_SHUTDOWN, ExitWindowsEx, FindWindowW, INPUT, INPUT_KEYBOARD, KEYEVENTF_KEYUP, SendInput, SetForegroundWindow, ShowWindow};
 #[macro_use]
 extern crate serde_derive;
 
@@ -118,7 +119,7 @@ fn main() {
                                 game_running.store(1, atomic::Ordering::Relaxed);
                             } else if &seeder_info.action[..] == "shutdownPC"  && cfg.allow_shutdown {
                                 unsafe {
-                                    ExitWindowsEx(0x00000001, 0x80000000);
+                                    ExitWindowsEx(EWX_SHUTDOWN, SHTDN_REASON_MAJOR_OPERATINGSYSTEM);
                                 }
                             } else {
                                 quit_game();
