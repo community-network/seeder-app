@@ -107,7 +107,6 @@ fn main() {
                                 // game state == no game
                                 game_running.store(0, atomic::Ordering::Relaxed);
                             }
-                            old_seeder_info = seeder_info.clone();
                         } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
                             println!("request older than a hour, not running latest request.")
                         } else {
@@ -117,6 +116,7 @@ fn main() {
                                 launch_game(&cfg, &seeder_info);
                             }
                         }
+                        old_seeder_info = seeder_info.clone();
                     },
                     Err(e) => {
                         println!("Failed to get info about server to join: {}", e);
