@@ -34,6 +34,8 @@ struct CurrentServer {
     game_id: String,
     #[serde(rename = "groupId")]
     group_id: String,
+    #[serde(rename = "timeStamp")]
+    timestamp: i64,
     action: String
 }
 
@@ -55,6 +57,7 @@ fn main() {
     // anti afk thread, runs when game is in "joined" state
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
+            println!("test");
             let window: Vec<u16> = OsStr::new("Battlefield™ 1")
                 .encode_wide()
                 .chain(once(0))
@@ -77,7 +80,7 @@ fn main() {
     });
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
-    let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone()};
+    let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp()};
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!(
         "http://seeder.gametools.network:5252/api/getseeder?groupid={}",
@@ -89,7 +92,8 @@ fn main() {
             Ok(response) => {
                 match response.into_json::<CurrentServer>() {
                     Ok(seeder_info) => {
-                        if seeder_info != old_seeder_info {
+                        let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp()-3600; // if it is older than 1 hour, dont try to run
+                        if seeder_info.timestamp != old_seeder_info.timestamp && !a_hour {
                             if &seeder_info.action[..] == "joinServer" {
                                 // remove old session when switching to fast
                                 if &old_seeder_info.game_id[..] != &seeder_info.game_id[..] && &old_seeder_info.action[..] == "joinServer" {
@@ -156,15 +160,19 @@ fn main() {
                                 game_running.store(0, atomic::Ordering::Relaxed);
                             }
                             old_seeder_info = seeder_info.clone();
+                        } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
+                            println!("request older than a hour, not running latest request.")
                         }
                     },
                     Err(e) => {
-                        println!("Failed to get info about server to join: {}", e)
+                        println!("Failed to get info about server to join: {}", e);
+                        println!("reconnecting...");
                     }
                 }
             },
             Err(e) => {
                 println!("Failed to connect to backend: {}", e);
+                println!("reconnecting...");
             },
         }
         sleep(Duration::from_secs(10));
