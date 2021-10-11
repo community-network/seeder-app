@@ -62,7 +62,6 @@ fn main() {
     // anti afk thread, runs when game is in "joined" state
     thread::spawn(move || loop {
         if game_running_clone.load(atomic::Ordering::Relaxed) == 1 {
-            println!("test");
             let game_info = is_running();
             if game_info.is_running {
                 unsafe {
@@ -76,7 +75,7 @@ fn main() {
                 }
             }
         }
-        sleep(Duration::from_millis(120000));
+        sleep(Duration::from_secs(120));
     });
 
     let cfg: SeederConfig = confy::load_path("config.txt").unwrap();
