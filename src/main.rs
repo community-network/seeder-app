@@ -118,8 +118,9 @@ fn main() {
                                 // game state == running game
                                 game_running.store(1, atomic::Ordering::Relaxed);
                             } else if &seeder_info.action[..] == "shutdownPC"  && cfg.allow_shutdown {
-                                unsafe {
-                                    ExitWindowsEx(EWX_SHUTDOWN, SHTDN_REASON_MAJOR_OPERATINGSYSTEM);
+                                match shutdown() {
+                                    Ok(_) => println!("Shutting down, bye!"),
+                                    Err(error) => eprintln!("Failed to shut down: {}", error),
                                 }
                             } else {
                                 quit_game();
