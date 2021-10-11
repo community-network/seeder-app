@@ -110,7 +110,7 @@ fn main() {
                             println!("request older than a hour, not running latest request.")
                         } else {
                             let game_info = is_running();
-                            if game_info.is_running && &seeder_info.action[..] == "joinServer" {
+                            if !game_info.is_running && &seeder_info.action[..] == "joinServer" {
                                 println!("didn't find game running, starting..");
                                 launch_game(&cfg, &seeder_info);
                             }
