@@ -37,7 +37,8 @@ struct CurrentServer {
     group_id: String,
     #[serde(rename = "timeStamp")]
     timestamp: i64,
-    action: String
+    action: String,
+    rejoin: bool,
 }
 
 struct GameInfo {
@@ -94,7 +95,7 @@ fn main() {
         }
     };
     
-    let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp()};
+    let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp(), rejoin: true};
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!(
         "http://seeder.gametools.network:5252/api/getseeder?groupid={}",
@@ -131,8 +132,7 @@ fn main() {
                         } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
                             println!("request older than a hour, not running latest request.")
                         } else {
-                            // TODO: add auto-rejoin disable/enable
-                            if !&game_info.is_running && &seeder_info.action[..] == "joinServer" {
+                            if !&game_info.is_running && &seeder_info.action[..] == "joinServer" && seeder_info.rejoin {
                                 println!("didn't find game running, starting..");
                                 launch_game(&cfg, &seeder_info);
                             }
