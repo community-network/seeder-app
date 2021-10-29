@@ -58,8 +58,6 @@ impl ::std::default::Default for SeederConfig {
     }
 }
 
-// "ws://localhost:5051/ws/seeder?groupid={}"
-// "ws://seeder.gametools.network:5252/ws/seeder?groupid={}"
 fn main() {
     let game_running = Arc::new(atomic::AtomicU32::new(0));
     let game_running_clone = Arc::clone(&game_running);
@@ -98,7 +96,7 @@ fn main() {
     let mut old_seeder_info = CurrentServer{game_id: "".into(), action: "leaveServer".into(), group_id: cfg.group_id.clone(), timestamp: chrono::Utc::now().timestamp(), rejoin: true};
     confy::store_path("config.txt", cfg.clone()).unwrap();
     let connect_addr = format!(
-        "http://seeder.gametools.network:5252/api/getseeder?groupid={}",
+        "https://manager-api.gametools.network/api/getseeder?groupid={}",
         cfg.group_id
     );
     println!("firing of latest request found (default on startup script)");
@@ -156,7 +154,7 @@ fn main() {
 }
 
 fn ping_backend(cfg: &SeederConfig, game_info: &GameInfo) {
-    match ureq::post("http://seeder.gametools.network:5252/api/seederinfo").send_json(ureq::json!({
+    match ureq::post("https://manager-api.gametools.network/api/seederinfo").send_json(ureq::json!({
         "groupid": cfg.group_id,
         "isrunning": game_info.is_running,
         "hostname": cfg.hostname
