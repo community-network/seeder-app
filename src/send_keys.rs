@@ -4,11 +4,11 @@ use winapi::um::winuser::{INPUT, INPUT_KEYBOARD, KEYEVENTF_EXTENDEDKEY, KEYEVENT
 use crate::chars::DXCode;
 // key codes: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 
-unsafe fn create_input(key_code: u16, wVk: u16, flags: u32) -> INPUT {
+unsafe fn create_input(key_code: u16, wvk: u16, flags: u32) -> INPUT {
     let mut input = mem::zeroed::<INPUT>();
     input.type_ = INPUT_KEYBOARD;
     let mut ki = input.u.ki_mut();
-    ki.wVk = wVk;
+    ki.wVk = wvk;
     ki.wScan = key_code;
     ki.dwExtraInfo = 0;
     ki.dwFlags = flags;
