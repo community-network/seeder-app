@@ -17,3 +17,4 @@ ureq = { version = "2.2.0", features = ["json"] }
 chrono = "*"
 hostname = "^0.3"
 system_shutdown = "3.0.0"
+urlencoding = "2.1.0"

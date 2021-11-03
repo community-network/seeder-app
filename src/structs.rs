@@ -54,3 +54,14 @@ impl ::std::default::Default for SeederConfig {
         }
     }
 }
+
+#[derive(Deserialize, PartialEq, Clone, Debug)]
+pub struct ServerList {
+    pub servers: Vec<ServerInfo>,
+}
+
+#[derive(Deserialize, PartialEq, Clone, Debug)]
+pub struct ServerInfo {
+    #[serde(rename = "gameId")]
+    pub game_id: String,
+}

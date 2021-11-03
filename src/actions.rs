@@ -52,10 +52,28 @@ pub fn quit_game() {
     }
 }
 
-pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str) {
+pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     println!("joining id: {}", game_id);
-    match Command::new(cfg.game_location.clone())
-        .args([
+    let mut command = Command::new(cfg.game_location.clone());
+    if role == "spectator" {
+        command.args([
+            "-webMode",
+            "MP",
+            "-Origin_NoAppFocus",
+            "--activate-webhelper",
+            "-requestState",
+            "State_ClaimReservation",
+            "-gameId",
+            game_id,
+            "-gameMode",
+            "MP",
+            "-role",
+            "spectator",
+            "-asSpectator",
+            "true"
+        ]);
+    } else {
+        command.args([
             "-webMode",
             "MP",
             "-Origin_NoAppFocus",
@@ -69,8 +87,10 @@ pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str) {
             "-role",
             "soldier",
             "-asSpectator",
-        ])
-        .spawn()
+            "false"
+        ]);
+    }
+    match command.spawn()
     {
         Ok(_) => println!("game launched"),
         Err(e) => println!("failed to launch game: {}", e),

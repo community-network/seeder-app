@@ -8,6 +8,8 @@ mod actions;
 mod functions;
 mod send_keys;
 mod structs;
+mod chars;
+
 
 fn main() {
     // game_running based on api, 0 == leaving servers. 1 means joining servers.
@@ -41,8 +43,10 @@ fn main() {
     confy::store_path("config.txt", cfg.clone()).unwrap();
 
     // anti afk thread, runs when game is in "joined" state
+    let afk_cfg = cfg.clone();
     thread::spawn(move || loop {
         functions::anti_afk(
+            &afk_cfg,
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
         )
