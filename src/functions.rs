@@ -49,14 +49,14 @@ pub fn anti_afk(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, mess
                     }
                 }
                 send_keys::send_string(message);
-                // sleep(Duration::from_millis(100));
-                // send_keys::key_enter(0x1C, 8);
+                sleep(Duration::from_millis(100));
+                send_keys::key_enter(0x1C, 8);
                 sleep(Duration::from_millis(100));
                 ShowWindow(game_info.game_process, 6);
             }
         }
     }
-    sleep(Duration::from_secs(10));
+    sleep(Duration::from_secs(120));
 }
 
 pub fn auto_message(
