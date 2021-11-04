@@ -30,7 +30,6 @@ pub fn anti_afk(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, mess
             }
         }
     }
-    println!("{:#?}", message_running);
     if message_running.load(atomic::Ordering::Relaxed) == 1 {
         let game_info = actions::is_running();
         if game_info.is_running {
