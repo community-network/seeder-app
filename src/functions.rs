@@ -20,7 +20,6 @@ pub fn anti_afk(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, mess
         let game_info = actions::is_running();
         if game_info.is_running {
             unsafe {
-                // if game is not running
                 SetForegroundWindow(game_info.game_process);
                 ShowWindow(game_info.game_process, 9);
                 sleep(Duration::from_millis(1808));
@@ -34,7 +33,6 @@ pub fn anti_afk(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, mess
         let game_info = actions::is_running();
         if game_info.is_running {
             unsafe {
-                // if game is not running
                 SetForegroundWindow(game_info.game_process);
                 ShowWindow(game_info.game_process, 9);
                 sleep(Duration::from_millis(1808));
