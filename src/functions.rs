@@ -24,6 +24,7 @@ pub fn anti_afk(
     if message_running.load(atomic::Ordering::Relaxed) == 1 {
         let timeout = message_timeout.load(atomic::Ordering::Relaxed);
         if timeout >= (cfg.message_timeout_mins / 2) {
+            println!("sending message...");
             actions::send_message(cfg);
             message_timeout.store(0, atomic::Ordering::Relaxed);
         } else {

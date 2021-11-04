@@ -7,3 +7,4 @@ message = 'Join our discord, we are always recruiting: discord.gg/BoB'
 message_server_name = '[BoB]#1 EU'
 message_start_time_utc = '12:00'
 message_stop_time_utc = '23:00'
+message_timeout_mins = 8
