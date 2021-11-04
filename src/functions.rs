@@ -147,7 +147,7 @@ pub fn seed_server(
                 Err(error) => eprintln!("Failed to shut down: {}", error),
             }
         } else {
-            // actions::quit_game();
+            actions::quit_game();
             // game state == no game
             game_running.store(0, atomic::Ordering::Relaxed);
         }
