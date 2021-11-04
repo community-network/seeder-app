@@ -44,7 +44,6 @@ pub unsafe fn key_enter(key_code: u16, timeout: u64) {
 
 pub unsafe fn send_string(keys: Vec<DXCode>) {
     for key in keys {
-        println!("{:#?}", key);
         match key {
             DXCode::Shifted(code)=>{
                 sleep(Duration::from_millis(10));
