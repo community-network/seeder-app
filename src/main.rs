@@ -20,6 +20,8 @@ fn main() {
     let message_running = Arc::new(atomic::AtomicU32::new(0));
     let message_running_clone = Arc::clone(&message_running);
     let message_running_clone_anti_afk = Arc::clone(&message_running);
+
+    let message_timeout = Arc::new(atomic::AtomicU32::new(0));
     // get/set config
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
         Ok(config) => config,
@@ -37,6 +39,7 @@ fn main() {
                 message_server_name: "[BoB]#1 EU".into(),
                 message_start_time_utc: "12:00".into(),
                 message_stop_time_utc: "23:00".into(),
+                message_timeout_mins: 8,
             }
         }
     };
@@ -49,6 +52,7 @@ fn main() {
             &afk_cfg,
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
+            &message_timeout,
         )
     });
 

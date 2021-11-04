@@ -19,6 +19,7 @@ pub struct SeederConfig {
     pub message_server_name: String,
     pub message_start_time_utc: String,
     pub message_stop_time_utc: String,
+    pub message_timeout_mins: u32,
 }
 
 #[derive(Deserialize, PartialEq, Clone, Debug)]
@@ -51,6 +52,7 @@ impl ::std::default::Default for SeederConfig {
             message_server_name: "[BoB]#1 EU".into(),
             message_start_time_utc: "12:00".into(),
             message_stop_time_utc: "23:00".into(),
+            message_timeout_mins: 8,
         }
     }
 }

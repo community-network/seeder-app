@@ -7,50 +7,28 @@ use std::{
 };
 use system_shutdown::shutdown;
 use urlencoding::encode;
-use winapi::um::winuser::{SetForegroundWindow, ShowWindow};
 
 use crate::actions;
-use crate::chars::{DXCode, char_to_dxcodes};
-use crate::send_keys;
 use crate::structs;
 
-pub fn anti_afk(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, message_running: &Arc<AtomicU32>) {
+pub fn anti_afk(
+    cfg: &structs::SeederConfig,
+    game_running: &Arc<AtomicU32>,
+    message_running: &Arc<AtomicU32>,
+    message_timeout: &Arc<AtomicU32>,
+) {
     // run when seeding or message
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
-        let game_info = actions::is_running();
-        if game_info.is_running {
-            unsafe {
-                SetForegroundWindow(game_info.game_process);
-                ShowWindow(game_info.game_process, 9);
-                sleep(Duration::from_millis(1808));
-                send_keys::key_enter(0x12, 200);
-                sleep(Duration::from_millis(100));
-                ShowWindow(game_info.game_process, 6);
-            }
-        }
+        actions::anti_afk();
     }
     if message_running.load(atomic::Ordering::Relaxed) == 1 {
-        let game_info = actions::is_running();
-        if game_info.is_running {
-            unsafe {
-                SetForegroundWindow(game_info.game_process);
-                ShowWindow(game_info.game_process, 9);
-                sleep(Duration::from_millis(1808));
-                send_keys::key_enter(0x24, 8);
-                sleep(Duration::from_millis(800));
-                let mut message: Vec<DXCode> = Vec::new();
-                for char in cfg.message.chars() {
-                    match char_to_dxcodes(char) {
-                        Some(dx) => message.push(dx),
-                        None => {},
-                    }
-                }
-                send_keys::send_string(message);
-                sleep(Duration::from_millis(100));
-                send_keys::key_enter(0x1C, 8);
-                sleep(Duration::from_millis(100));
-                ShowWindow(game_info.game_process, 6);
-            }
+        let timeout = message_timeout.load(atomic::Ordering::Relaxed);
+        if timeout >= (cfg.message_timeout_mins / 2) {
+            actions::send_message(cfg);
+            message_timeout.store(0, atomic::Ordering::Relaxed);
+        } else {
+            actions::anti_afk();
+            message_timeout.store(timeout + 1, atomic::Ordering::Relaxed);
         }
     }
     sleep(Duration::from_secs(120));
