@@ -35,7 +35,7 @@ fn main() {
                     .into(),
                 allow_shutdown: false,
                 send_messages: false,
-                message: "Join our discord, we are always recruiting: discord.gg/BoB".into(),
+                message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
                 message_server_name: "[BoB]#1 EU".into(),
                 message_start_time_utc: "12:00".into(),
                 message_stop_time_utc: "23:00".into(),

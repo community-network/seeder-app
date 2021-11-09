@@ -25,7 +25,7 @@ pub fn anti_afk(
         let timeout = message_timeout.load(atomic::Ordering::Relaxed);
         if timeout >= (cfg.message_timeout_mins / 2) {
             println!("sending message...");
-            actions::send_message(cfg);
+            actions::send_message(&cfg.message);
             message_timeout.store(0, atomic::Ordering::Relaxed);
         } else {
             actions::anti_afk();
@@ -125,7 +125,10 @@ pub fn seed_server(
                 Ok(_) => println!("Shutting down, bye!"),
                 Err(error) => eprintln!("Failed to shut down: {}", error),
             }
-        } else {
+        } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages && game_info.is_running {
+            println!("broadcasting message...");
+            actions::send_message(&seeder_info.game_id);
+        } else if &seeder_info.action[..] == "leaveServer" {
             actions::quit_game();
             // game state == no game
             game_running.store(0, atomic::Ordering::Relaxed);

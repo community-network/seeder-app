@@ -25,17 +25,22 @@ pub fn anti_afk() {
         }
 }
 
-pub fn send_message(cfg: &structs::SeederConfig) {
+pub fn send_message(to_send: &String) {
     let game_info = is_running();
     if game_info.is_running {
         unsafe {
+            // println!("open");
             SetForegroundWindow(game_info.game_process);
             ShowWindow(game_info.game_process, 9);
+            // println!("wait");
             sleep(Duration::from_millis(1808));
-            send_keys::key_enter(0x24, 8);
+            // println!("open menu");
+            send_keys::key_enter(0x24, 20);
+            // println!("wait");
             sleep(Duration::from_millis(800));
+            // println!("type message");
             let mut message: Vec<DXCode> = Vec::new();
-            for char in cfg.message.chars() {
+            for char in to_send.chars() {
                 match char_to_dxcodes(char) {
                     Some(dx) => message.push(dx),
                     None => {},
@@ -43,8 +48,10 @@ pub fn send_message(cfg: &structs::SeederConfig) {
             }
             send_keys::send_string(message);
             sleep(Duration::from_millis(100));
+            // println!("send enter");
             send_keys::key_enter(0x1C, 8);
             sleep(Duration::from_millis(100));
+            // println!("minimize");
             ShowWindow(game_info.game_process, 6);
         }
     }
