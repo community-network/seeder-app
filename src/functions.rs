@@ -125,7 +125,7 @@ pub fn seed_server(
                 Ok(_) => println!("Shutting down, bye!"),
                 Err(error) => eprintln!("Failed to shut down: {}", error),
             }
-        } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages && game_info.is_running {
+        } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages {
             println!("broadcasting message...");
             actions::send_message(&seeder_info.game_id);
         } else if &seeder_info.action[..] == "leaveServer" {

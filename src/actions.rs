@@ -33,11 +33,11 @@ pub fn send_message(to_send: &String) {
             SetForegroundWindow(game_info.game_process);
             ShowWindow(game_info.game_process, 9);
             // println!("wait");
-            sleep(Duration::from_millis(1808));
+            sleep(Duration::from_millis(5000));
             // println!("open menu");
-            send_keys::key_enter(0x24, 20);
+            send_keys::key_enter(0x24, 80);
             // println!("wait");
-            sleep(Duration::from_millis(800));
+            sleep(Duration::from_millis(2000));
             // println!("type message");
             let mut message: Vec<DXCode> = Vec::new();
             for char in to_send.chars() {
@@ -49,8 +49,8 @@ pub fn send_message(to_send: &String) {
             send_keys::send_string(message);
             sleep(Duration::from_millis(100));
             // println!("send enter");
-            send_keys::key_enter(0x1C, 8);
-            sleep(Duration::from_millis(100));
+            send_keys::key_enter(0x1C, 80);
+            sleep(Duration::from_millis(2500));
             // println!("minimize");
             ShowWindow(game_info.game_process, 6);
         }
