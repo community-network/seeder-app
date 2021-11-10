@@ -5,11 +5,30 @@ use std::process::Command;
 use std::ptr;
 use std::thread::sleep;
 use std::time::Duration;
-use winapi::shared::windef::HWND__;
-use winapi::um::winuser::{FindWindowW, SetForegroundWindow, ShowWindow};
+use winapi::shared::windef::{HWND__, LPRECT, RECT};
+use winapi::um::winuser::{FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow};
 
 use crate::{send_keys, structs};
 use crate::chars::{DXCode, char_to_dxcodes};
+
+pub fn is_fullscreen() -> bool {
+    let game_info = is_running();
+    if game_info.is_running {
+        let mut rect = RECT {left: 0, right: 0, top: 0, bottom: 0};
+        let game_size = LPRECT::from(&mut rect.clone());
+        let screen_size = LPRECT::from(&mut rect);
+        unsafe {
+            GetWindowRect(game_info.game_process, game_size);
+            GetWindowRect(GetDesktopWindow(), screen_size);
+            return ((*game_size).left == (*screen_size).left) && 
+            ((*game_size).right == (*screen_size).right) &&
+            ((*game_size).top == (*screen_size).top) &&
+            ((*game_size).bottom == (*screen_size).bottom);
+        }
+    } else {
+        false
+    }
+}
 
 pub fn anti_afk() {
     let game_info = is_running();

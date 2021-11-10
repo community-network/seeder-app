@@ -19,7 +19,12 @@ pub fn anti_afk(
 ) {
     // run when seeding or message
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
-        actions::anti_afk();
+        let fullscreen = actions::is_fullscreen();
+        if fullscreen && cfg.fullscreen_anti_afk {
+            actions::anti_afk();
+        } else if !fullscreen {
+            actions::anti_afk();
+        }
     }
     if message_running.load(atomic::Ordering::Relaxed) == 1 {
         let timeout = message_timeout.load(atomic::Ordering::Relaxed);
