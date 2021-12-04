@@ -111,12 +111,14 @@ pub fn seed_server(
     let game_info = actions::is_running();
     let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp() - 3600;
     let a_minute = seeder_info.timestamp < chrono::Utc::now().timestamp() - 60;
+    let kp_seeder = seeder_info.seeder_arr.iter().any(|i| i== &cfg.hostname); //checking if hostname in seeder array
+    let mut old_kp_seeder = old_seeder_info.seeder_arr.iter().any(|i| i== &cfg.hostname);
     if seeder_info.timestamp != old_seeder_info.timestamp && !a_hour {
         if &seeder_info.action[..] == "joinServer" {
             // remove old session when switching to fast
-            if (&old_seeder_info.game_id[..] != &seeder_info.game_id[..]
-                && &old_seeder_info.action[..] == "joinServer")
-                || (message_running.load(atomic::Ordering::Relaxed) == 1)
+            if &old_seeder_info.game_id[..] != &seeder_info.game_id[..] 
+               && (&old_seeder_info.action[..] == "joinServer" || (&old_seeder_info.action[..] == "keepAlive" && old_kp_seeder)) 
+               || (message_running.load(atomic::Ordering::Relaxed) == 1)
             {
                 actions::quit_game();
                 // message is not running while seeding
@@ -125,6 +127,24 @@ pub fn seed_server(
             actions::launch_game(cfg, &seeder_info.game_id[..], "soldier");
             // game state == running game
             game_running.store(1, atomic::Ordering::Relaxed);
+        } else if &seeder_info.action[..] == "keepAlive" {
+            //if gameid is different then old game id, or seedername not present in old arr, leave current session and start new
+            if (&old_seeder_info.game_id[..] != &seeder_info.game_id[..] 
+               && (&old_seeder_info.action[..] == "joinServer" || (&old_seeder_info.action[..] == "keepAlive" && old_kp_seeder))) 
+               || (&old_seeder_info.action[..] == "keepAlive" && old_kp_seeder && !kp_seeder)    
+               || (message_running.load(atomic::Ordering::Relaxed) == 1)
+            {
+                actions::quit_game();
+                old_kp_seeder = false;
+                // message is not running while seeding
+                message_running.store(0, atomic::Ordering::Relaxed);
+            }
+            if kp_seeder  && !old_kp_seeder
+            {
+                actions::launch_game(cfg, &seeder_info.game_id[..], "soldier");
+                // game state == running game
+                game_running.store(1, atomic::Ordering::Relaxed);
+            }
         } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
             match shutdown() {
                 Ok(_) => println!("Shutting down, bye!"),
@@ -138,10 +158,12 @@ pub fn seed_server(
             // game state == no game
             game_running.store(0, atomic::Ordering::Relaxed);
         }
-    } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
+    } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour { 
         println!("request older than a hour, not running latest request.")
     } else {
-        if !&game_info.is_running && &seeder_info.action[..] == "joinServer" && seeder_info.rejoin {
+        if !&game_info.is_running && ((&seeder_info.action[..] == "joinServer" && seeder_info.rejoin) 
+            || ( &seeder_info.action[..] == "keepAlive" && kp_seeder))
+        {
             println!("didn't find game running, starting..");
             actions::launch_game(cfg, &seeder_info.game_id[..], "soldier");
         }

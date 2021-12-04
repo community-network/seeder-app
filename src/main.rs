@@ -73,6 +73,7 @@ fn main() {
         action: "leaveServer".into(),
         group_id: cfg.group_id.clone(),
         timestamp: chrono::Utc::now().timestamp(),
+        seeder_arr: vec![],
         rejoin: true,
     };
     let connect_addr = format!(

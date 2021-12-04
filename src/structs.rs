@@ -32,6 +32,8 @@ pub struct CurrentServer {
     #[serde(rename = "timeStamp")]
     pub timestamp: i64,
     pub action: String,
+    #[serde(rename = "seederArr")]
+    pub seeder_arr: Vec<String>,
     pub rejoin: bool,
 }
 
