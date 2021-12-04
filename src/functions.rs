@@ -158,7 +158,7 @@ pub fn seed_server(
             // game state == no game
             game_running.store(0, atomic::Ordering::Relaxed);
         }
-    } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour { 
+    } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
         println!("request older than a hour, not running latest request.")
     } else {
         if !&game_info.is_running && ((&seeder_info.action[..] == "joinServer" && seeder_info.rejoin) 
