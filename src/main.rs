@@ -3,7 +3,7 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
-
+use std::collections::HashMap;
 mod actions;
 mod functions;
 mod send_keys;
@@ -73,6 +73,7 @@ fn main() {
         action: "leaveServer".into(),
         group_id: cfg.group_id.clone(),
         timestamp: chrono::Utc::now().timestamp(),
+        keep_alive_seeders: HashMap::new(),
         seeder_arr: vec![],
         rejoin: true,
     };
