@@ -19,11 +19,15 @@ jobs:
 
       - name: Build
         run: cargo build --all --release
+      - name: Create folder
+        run: |
+          mkdir -p build
+          cp -R ./target/release/bf1-seeder.exe ./build
+          ls ./build
 
       - name: Deploy 🚀 # deploy to the gh-pages branch
         uses: JamesIves/github-pages-deploy-action@v4.2.2
         with:
           repository-name: 'community-network/bf1-seeder'
           branch: main # The branch the action should deploy to.
-          folder: ./target/release/bf1-seeder.exe # The folder the action should deploy.
           clean: true # Automatically remove deleted files from the deploy branch
