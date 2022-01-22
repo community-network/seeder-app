@@ -28,6 +28,7 @@ jobs:
       - name: Deploy 🚀 # deploy to the gh-pages branch
         uses: JamesIves/github-pages-deploy-action@v4.2.2
         with:
+          token: ${{ secrets.TOKEN }}
           repository-name: 'community-network/bf1-seeder'
           folder: ./build
           branch: main # The branch the action should deploy to.
