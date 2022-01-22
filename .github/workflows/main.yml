@@ -25,5 +25,5 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: target/release/seeder-app.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: community-network/bf1-seeder
