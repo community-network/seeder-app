@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout
@@ -14,7 +14,6 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: x86_64-pc-windows-gnu
           default: true
           override: true
 
@@ -27,10 +26,10 @@ jobs:
           ls ./build
 
       - name: Deploy 🚀 # deploy to the gh-pages branch
-        uses: JamesIves/github-pages-deploy-action@v4.2.2
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          token: ${{ secrets.TOKEN }}
-          repository-name: 'community-network/bf1-seeder'
-          folder: ./build
-          branch: main # The branch the action should deploy to.
-          clean: true # Automatically remove deleted files from the deploy branch
+        
+          deploy_key: ${{ secrets.TOKEN }}
+          external_repository: community-network/bf1-seeder
+          publish_branch: main # default: gh-pages
+          publish_dir: ./build
