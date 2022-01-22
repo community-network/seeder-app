@@ -33,3 +33,4 @@ jobs:
           external_repository: community-network/bf1-seeder
           publish_branch: main # default: gh-pages
           publish_dir: ./build
+          enable_jekyll: true
