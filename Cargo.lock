@@ -45,6 +45,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
+name = "bf1-seeder"
+version = "0.3.5"
+dependencies = [
+ "chrono",
+ "confy",
+ "hostname",
+ "serde",
+ "serde_derive",
+ "system_shutdown",
+ "ureq",
+ "urlencoding",
+ "winapi",
+ "winproc",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -385,22 +401,6 @@ checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
 dependencies = [
  "ring",
  "untrusted",
-]
-
-[[package]]
-name = "seeder-app"
-version = "0.3.5"
-dependencies = [
- "chrono",
- "confy",
- "hostname",
- "serde",
- "serde_derive",
- "system_shutdown",
- "ureq",
- "urlencoding",
- "winapi",
- "winproc",
 ]
 
 [[package]]
