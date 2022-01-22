@@ -388,6 +388,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "seeder-app"
+version = "0.3.4"
+dependencies = [
+ "chrono",
+ "confy",
+ "hostname",
+ "serde",
+ "serde_derive",
+ "system_shutdown",
+ "ureq",
+ "urlencoding",
+ "winapi",
+ "winproc",
+]
+
+[[package]]
 name = "serde"
 version = "1.0.130"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -413,22 +429,6 @@ dependencies = [
  "itoa",
  "ryu",
  "serde",
-]
-
-[[package]]
-name = "server-join-scipt"
-version = "0.3.4"
-dependencies = [
- "chrono",
- "confy",
- "hostname",
- "serde",
- "serde_derive",
- "system_shutdown",
- "ureq",
- "urlencoding",
- "winapi",
- "winproc",
 ]
 
 [[package]]

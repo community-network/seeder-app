@@ -1,5 +1,5 @@
 [package]
-name = "server-join-scipt"
+name = "seeder-app"
 description = ""
 version = "0.3.4"
 edition = "2018"
