@@ -24,6 +24,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: target/release/seeder-app.exe
+          files: target/release/bf1-seeder.exe
           token: ${{ secrets.GITHUB_TOKEN }}
           repository: community-network/bf1-seeder
