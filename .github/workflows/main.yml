@@ -29,6 +29,6 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4.2.2
         with:
           repository-name: 'community-network/bf1-seeder'
-          folder: build
+          folder: ./build
           branch: main # The branch the action should deploy to.
           clean: true # Automatically remove deleted files from the deploy branch
