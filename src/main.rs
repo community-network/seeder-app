@@ -35,6 +35,7 @@ fn main() {
                     .into(),
                 allow_shutdown: false,
                 send_messages: false,
+                usable_client: true,
                 fullscreen_anti_afk: true,
                 message: "Join our discord, we are recruiting: ...".into(),
                 message_server_name: "".into(),

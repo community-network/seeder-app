@@ -15,6 +15,7 @@ pub struct SeederConfig {
     pub allow_shutdown: bool,
     // when i'ts done seeding, join for messages
     pub send_messages: bool,
+    pub usable_client: bool,
     pub fullscreen_anti_afk: bool,
     pub message: String,
     pub message_server_name: String,
@@ -49,6 +50,7 @@ impl ::std::default::Default for SeederConfig {
             game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".into(),
             allow_shutdown: false,
             send_messages: false,
+            usable_client: true,
             fullscreen_anti_afk: true,
             message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
             message_server_name: "[BoB]#1 EU".into(),
