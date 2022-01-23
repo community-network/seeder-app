@@ -46,6 +46,9 @@ fn main() {
         }
     };
     confy::store_path("config.txt", cfg.clone()).unwrap();
+    if cfg.group_id == "" {
+        println!("group_id isn't set!");
+    }
 
     // anti afk thread, runs when game is in "joined" state
     let afk_cfg = cfg.clone();
