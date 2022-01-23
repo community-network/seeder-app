@@ -30,14 +30,14 @@ fn main() {
             println!("changing back to default..");
             structs::SeederConfig {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
-                group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
+                group_id: "".into(),
                 game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe"
                     .into(),
                 allow_shutdown: false,
                 send_messages: false,
                 fullscreen_anti_afk: true,
-                message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
-                message_server_name: "[BoB]#1 EU".into(),
+                message: "Join our discord, we are recruiting: ...".into(),
+                message_server_name: "".into(),
                 message_start_time_utc: "12:00".into(),
                 message_stop_time_utc: "23:00".into(),
                 message_timeout_mins: 8,
