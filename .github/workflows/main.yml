@@ -21,7 +21,6 @@ jobs:
         run: cargo build --all --release
       - name: Create folder
         run: |
-          mkdir -p build
           cp -R ./target/release/bf1-seeder.exe ./build
           ls ./build
 
