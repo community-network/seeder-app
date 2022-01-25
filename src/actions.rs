@@ -121,6 +121,28 @@ pub fn quit_game() {
     }
 }
 
+pub fn restart_origin() {
+    println!("Restarting Origin");
+    let game_process = winproc::Process::from_name("Origin.exe");
+    let mut command = Command::new("C:\\Program Files (x86)\\Origin\\Origin.exe");
+    match game_process {
+        Ok(mut process) => match process.terminate(1) {
+            Ok(_) => println!("Closed Origin"),
+            Err(e) => {
+                println!("failed to close origin (likely permissions): {}", e);
+            }
+        },
+        Err(_) => {
+            println!("origin not found!");
+        }
+    }
+    match command.spawn()
+    {
+        Ok(_) => println!("origin launched"),
+        Err(e) => println!("failed to launch origin: {}", e),
+    }
+}
+
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     println!("joining id: {}", game_id);
     let mut command = Command::new(cfg.game_location.clone());

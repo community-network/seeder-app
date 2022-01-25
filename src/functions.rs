@@ -6,6 +6,7 @@ use std::{
     time::Duration,
 };
 use system_shutdown::shutdown;
+use system_shutdown::reboot;
 use urlencoding::encode;
 
 use crate::actions;
@@ -128,7 +129,7 @@ pub fn seed_server(
         if kp_seeder {
             //if gameid is different then old game id, or seedername not present in old arr, leave current session and start new
             if game_info.is_running 
-            && old_game_id != current_game_id 
+            && (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer") 
             || (message_running.load(atomic::Ordering::Relaxed) == 1)    
             {
                 actions::quit_game();
@@ -142,7 +143,7 @@ pub fn seed_server(
             game_running.store(1, atomic::Ordering::Relaxed);
         } else if &seeder_info.action[..] == "joinServer" {
             // remove old session when switching to fast
-            if old_game_id != current_game_id
+            if (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer")
             || (message_running.load(atomic::Ordering::Relaxed) == 1)
             {
                 actions::quit_game();
@@ -152,10 +153,22 @@ pub fn seed_server(
             actions::launch_game(cfg, current_game_id, "soldier");
             // game state == running game
             game_running.store(1, atomic::Ordering::Relaxed);
+        } else if &seeder_info.action[..] == "restartOrigin" && !a_minute {
+            if game_info.is_running
+            {
+                actions::quit_game();
+                game_running.store(0, atomic::Ordering::Relaxed);
+            }
+            actions::restart_origin();
         } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
             match shutdown() {
                 Ok(_) => println!("Shutting down, bye!"),
                 Err(error) => eprintln!("Failed to shut down: {}", error),
+            }
+        } else if &seeder_info.action[..] == "rebootPC" && !a_minute {
+            match reboot() {
+                Ok(_) => println!("Rebooting ..."),
+                Err(error) => eprintln!("Failed to reboot: {}", error),
             }
         } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages {
             println!("broadcasting message...");
