@@ -11,6 +11,7 @@ use winapi::um::winuser::{
 };
 
 use crate::chars::{char_to_dxcodes, DXCode};
+use crate::{send_keys, structs};
 
 pub fn is_fullscreen() -> bool {
     let game_info = is_running();
