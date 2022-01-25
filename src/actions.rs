@@ -6,24 +6,30 @@ use std::ptr;
 use std::thread::sleep;
 use std::time::Duration;
 use winapi::shared::windef::{HWND__, LPRECT, RECT};
-use winapi::um::winuser::{FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow};
+use winapi::um::winuser::{
+    FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow,
+};
 
-use crate::{send_keys, structs};
-use crate::chars::{DXCode, char_to_dxcodes};
+use crate::chars::{char_to_dxcodes, DXCode};
 
 pub fn is_fullscreen() -> bool {
     let game_info = is_running();
     if game_info.is_running {
-        let mut rect = RECT {left: 0, right: 0, top: 0, bottom: 0};
+        let mut rect = RECT {
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+        };
         let game_size = LPRECT::from(&mut rect.clone());
         let screen_size = LPRECT::from(&mut rect);
         unsafe {
             GetWindowRect(game_info.game_process, game_size);
             GetWindowRect(GetDesktopWindow(), screen_size);
-            return ((*game_size).left == (*screen_size).left) && 
-            ((*game_size).right == (*screen_size).right) &&
-            ((*game_size).top == (*screen_size).top) &&
-            ((*game_size).bottom == (*screen_size).bottom);
+            return ((*game_size).left == (*screen_size).left)
+                && ((*game_size).right == (*screen_size).right)
+                && ((*game_size).top == (*screen_size).top)
+                && ((*game_size).bottom == (*screen_size).bottom);
         }
     } else {
         false
@@ -62,7 +68,7 @@ pub fn send_message(to_send: &String) {
             for char in to_send.chars() {
                 match char_to_dxcodes(char) {
                     Some(dx) => message.push(dx),
-                    None => {},
+                    None => {}
                 }
             }
             send_keys::send_string(message);
@@ -74,7 +80,6 @@ pub fn send_message(to_send: &String) {
             ShowWindow(game_info.game_process, 6);
         }
     }
-
 }
 
 pub fn ping_backend(cfg: &structs::SeederConfig, game_info: &structs::GameInfo) {
@@ -146,7 +151,7 @@ pub fn restart_origin() {
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     println!("joining id: {}", game_id);
     let mut command = Command::new(cfg.game_location.clone());
-    if role == "spectator" {
+    if cfg.usable_client {
         command.args([
             "-webMode",
             "MP",
@@ -159,12 +164,50 @@ pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
             "-gameMode",
             "MP",
             "-role",
-            "spectator",
+            role,
             "-asSpectator",
-            "true"
+            &(role == "spectator").to_string()[..],
         ]);
     } else {
         command.args([
+            "-Window.Fullscreen",
+            "false",
+            "-RenderDevice.MinDriverRequired",
+            "false",
+            "-DebrisSystem.Enable",
+            "false",
+            "-Render.DebugRendererEnable",
+            "false",
+            "-Core.HardwareGpuBias",
+            "-1",
+            "-Core.HardwareCpuBias",
+            "-1",
+            "-Texture.LoadingEnabled",
+            "false",
+            "-Client.TerrainEnabled",
+            "false",
+            "-Mesh.LoadingEnabled",
+            "false",
+            "-Core.HardwareProfile",
+            "Hardware_Low",
+            "-RenderDevice.CreateMinimalWindow",
+            "true",
+            "-RenderDevice.NullDriverEnable",
+            "true",
+            "-GameTime.ForceUseSleepTimer",
+            "true",
+            "-Mesh.LoadingEnabled",
+            "false",
+            "-ShaderSystem.DatabaseLoadingEnable",
+            "false",
+            "-Texture.LoadingEnabled",
+            "false",
+            "-Texture.RenderTexturesEnabled",
+            "false",
+            "-Client.TerrainEnabled",
+            "false",
+            "-Decal.SystemEnable",
+            "false",
             "-webMode",
             "MP",
             "-Origin_NoAppFocus",
@@ -176,13 +219,12 @@ pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
             "-gameMode",
             "MP",
             "-role",
-            "soldier",
+            role,
             "-asSpectator",
-            "false"
+            &(role == "spectator").to_string()[..],
         ]);
     }
-    match command.spawn()
-    {
+    match command.spawn() {
         Ok(_) => println!("game launched"),
         Err(e) => println!("failed to launch game: {}", e),
     }

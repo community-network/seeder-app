@@ -1,0 +1,35 @@
+name: Build release
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Install latest rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          default: true
+          override: true
+
+      - name: Build
+        run: cargo build --all --release
+      - name: Create folder
+        run: |
+          cp -R ./target/release/bf1-seeder.exe ./build
+          ls ./build
+
+      - name: Deploy 🚀 # deploy to the gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+        
+          personal_token: ${{ secrets.TOKEN }}
+          external_repository: community-network/bf1-seeder
+          publish_branch: main # default: gh-pages
+          publish_dir: ./build
+          enable_jekyll: true
