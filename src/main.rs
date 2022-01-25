@@ -21,6 +21,8 @@ fn main() {
     let message_running_clone = Arc::clone(&message_running);
     let message_running_clone_anti_afk = Arc::clone(&message_running);
 
+    let current_message_id = Arc::new(atomic::AtomicU32::new(0));
+
     let message_timeout = Arc::new(atomic::AtomicU32::new(0));
     // get/set config
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
@@ -58,6 +60,7 @@ fn main() {
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
             &message_timeout,
+            &current_message_id
         )
     });
 
