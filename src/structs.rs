@@ -1,5 +1,6 @@
 use serde_derive::{Deserialize, Serialize};
 use winapi::shared::windef::HWND__;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BroadcastMessage {
@@ -33,6 +34,10 @@ pub struct CurrentServer {
     #[serde(rename = "timeStamp")]
     pub timestamp: i64,
     pub action: String,
+    #[serde(rename = "keepAliveSeeders")]
+    pub keep_alive_seeders: HashMap<String, HashMap<String, String>>,
+    #[serde(rename = "seederArr")]
+    pub seeder_arr: Vec<String>,
     pub rejoin: bool,
 }
 
