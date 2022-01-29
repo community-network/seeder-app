@@ -21,6 +21,8 @@ fn main() {
     let message_running_clone = Arc::clone(&message_running);
     let message_running_clone_anti_afk = Arc::clone(&message_running);
 
+    let current_message_id = Arc::new(atomic::AtomicU32::new(0));
+
     let message_timeout = Arc::new(atomic::AtomicU32::new(0));
     // get/set config
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
@@ -30,15 +32,15 @@ fn main() {
             println!("changing back to default..");
             structs::SeederConfig {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
-                group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
+                group_id: "".into(),
                 game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe"
                     .into(),
                 allow_shutdown: false,
                 send_messages: false,
                 usable_client: true,
                 fullscreen_anti_afk: true,
-                message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
-                message_server_name: "[BoB]#1 EU".into(),
+                message: "Join our discord, we are recruiting: ...".into(),
+                message_server_name: "".into(),
                 message_start_time_utc: "12:00".into(),
                 message_stop_time_utc: "23:00".into(),
                 message_timeout_mins: 8,
@@ -46,6 +48,9 @@ fn main() {
         }
     };
     confy::store_path("config.txt", cfg.clone()).unwrap();
+    if cfg.group_id == "" {
+        println!("group_id isn't set!");
+    }
 
     // anti afk thread, runs when game is in "joined" state
     let afk_cfg = cfg.clone();
@@ -55,6 +60,7 @@ fn main() {
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
             &message_timeout,
+            &current_message_id
         )
     });
 

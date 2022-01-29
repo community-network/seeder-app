@@ -39,16 +39,16 @@ pub fn is_fullscreen() -> bool {
 
 pub fn anti_afk() {
     let game_info = is_running();
-        if game_info.is_running {
-            unsafe {
-                SetForegroundWindow(game_info.game_process);
-                ShowWindow(game_info.game_process, 9);
-                sleep(Duration::from_millis(1808));
-                send_keys::key_enter(0x12, 200);
-                sleep(Duration::from_millis(100));
-                ShowWindow(game_info.game_process, 6);
-            }
+    if game_info.is_running {
+        unsafe {
+            SetForegroundWindow(game_info.game_process);
+            ShowWindow(game_info.game_process, 9);
+            sleep(Duration::from_millis(1808));
+            send_keys::key_enter(0x12, 200);
+            sleep(Duration::from_millis(100));
+            ShowWindow(game_info.game_process, 6);
         }
+    }
 }
 
 pub fn send_message(to_send: &String) {
