@@ -1,6 +1,6 @@
 use chrono::{NaiveTime, Utc};
 use std::convert::TryInto;
-use std::sync::atomic::{AtomicI32, AtomicU32};
+use std::sync::atomic::AtomicU32;
 use std::{
     sync::{atomic, Arc},
     thread::sleep,
@@ -64,6 +64,7 @@ pub fn anti_afk(
 
 pub fn auto_message(
     game_running: &Arc<atomic::AtomicU32>,
+    retry_launch: &Arc<atomic::AtomicU32>,
     cfg: &structs::SeederConfig,
     message_running: &Arc<atomic::AtomicU32>,
 ) {
@@ -107,7 +108,7 @@ pub fn auto_message(
                 match ureq::get(&connect_addr[..]).call() {
                     Ok(response) => match response.into_json::<structs::ServerList>() {
                         Ok(server_info) => {
-                            actions::launch_game(cfg, &server_info.servers[0].game_id, "spectator");
+                            actions::launch_game(cfg, &server_info.servers[0].game_id, "spectator", &game_running, &retry_launch);
                         }
                         Err(_) => println!("Servername not found"),
                     },
@@ -128,6 +129,7 @@ pub fn seed_server(
     old_seeder_info: &mut structs::CurrentServer,
     cfg: &structs::SeederConfig,
     game_running: &Arc<AtomicU32>,
+    retry_launch: &Arc<AtomicU32>,
     message_running: &Arc<AtomicU32>,
 ) {
     let game_info = actions::is_running();
@@ -153,13 +155,13 @@ pub fn seed_server(
             && (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer") 
             || (message_running.load(atomic::Ordering::Relaxed) == 1)    
             {
-                actions::quit_game();
+                actions::quit_game(&game_running, &retry_launch);
                 // message is not running while seeding
                 message_running.store(0, atomic::Ordering::Relaxed);
             }
             if !game_info.is_running
             {
-                actions::launch_game(cfg, current_game_id, "soldier");
+                actions::launch_game(cfg, current_game_id, "soldier", &game_running, &retry_launch);
             }
             game_running.store(1, atomic::Ordering::Relaxed);
         } else if &seeder_info.action[..] == "joinServer" {
@@ -167,18 +169,17 @@ pub fn seed_server(
             if (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer")
             || (message_running.load(atomic::Ordering::Relaxed) == 1)
             {
-                actions::quit_game();
+                actions::quit_game(&game_running, &retry_launch);
                 // message is not running while seeding
                 message_running.store(0, atomic::Ordering::Relaxed);
             }
-            actions::launch_game(cfg, current_game_id, "soldier");
+            actions::launch_game(cfg, current_game_id, "soldier", &game_running, &retry_launch);
             // game state == running game
             game_running.store(1, atomic::Ordering::Relaxed);
         } else if &seeder_info.action[..] == "restartOrigin" && !a_minute {
             if game_info.is_running
             {
-                actions::quit_game();
-                game_running.store(0, atomic::Ordering::Relaxed);
+                actions::quit_game(&game_running, &retry_launch);
             }
             actions::restart_origin();
         } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
@@ -195,9 +196,8 @@ pub fn seed_server(
             println!("broadcasting message...");
             actions::send_message(&seeder_info.game_id);
         } else if &seeder_info.action[..] == "leaveServer" {
-            actions::quit_game();
+            actions::quit_game(&game_running, &retry_launch);
             // game state == no game
-            game_running.store(0, atomic::Ordering::Relaxed);
         }
     } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
         println!("request older than a hour, not running latest request.")
@@ -206,7 +206,12 @@ pub fn seed_server(
             || kp_seeder)
         {
             println!("didn't find game running, starting..");
-            actions::launch_game(cfg, current_game_id, "soldier");
+            actions::launch_game(cfg, current_game_id, "soldier", &game_running, &retry_launch);
+        }
+        //set retries 0
+        if game_info.is_running
+        {
+            retry_launch.store(0, atomic::Ordering::Relaxed);
         }
     }
     actions::ping_backend(cfg, &game_info);
