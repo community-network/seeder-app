@@ -94,7 +94,7 @@ fn main() {
     );
     println!("firing of latest request found (default on startup script)");
     loop {
-        match ureq::get(&connect_addr[..]).call() {
+        match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
             Ok(response) => match response.into_json::<structs::CurrentServer>() {
                 Ok(seeder_info) => {
                     functions::seed_server(

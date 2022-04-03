@@ -1,6 +1,6 @@
 group_id = '6852845a-850d-11eb-b244-0a58a9feac02'
 game_location = 'C:\Program Files (x86)\Origin Games\Battlefield 1\bf1.exe'
-hostname = 'seeder-1'
+hostname = 'Jobse-Laptop'
 allow_shutdown = false
 send_messages = false
 usable_client = true

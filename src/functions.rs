@@ -105,7 +105,7 @@ pub fn auto_message(
                     "https://api.gametools.network/bf1/servers/?name={}&region=all&platform=pc&limit=1&lang=en-us",
                     encode(&cfg.message_server_name[..])
                 );
-                match ureq::get(&connect_addr[..]).call() {
+                match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
                     Ok(response) => match response.into_json::<structs::ServerList>() {
                         Ok(server_info) => {
                             actions::launch_game(cfg, &server_info.servers[0].game_id, "spectator", &game_running, &retry_launch);
@@ -214,6 +214,7 @@ pub fn seed_server(
             retry_launch.store(0, atomic::Ordering::Relaxed);
         }
     }
-    actions::ping_backend(cfg, &game_info);
+    let origin_info = actions::is_origin_running();
+    actions::ping_backend(cfg, &game_info, &origin_info, retry_launch);
     *old_seeder_info = seeder_info.clone();
 }

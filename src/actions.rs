@@ -101,12 +101,14 @@ pub fn send_message(to_send: &String) {
     }
 }
 
-pub fn ping_backend(cfg: &structs::SeederConfig, game_info: &structs::GameInfo) {
-    match ureq::post("https://manager-api.gametools.network/api/seederinfo").send_json(
+pub fn ping_backend(cfg: &structs::SeederConfig, game_info: &structs::GameInfo, origin_info: &structs::GameInfo, retry_launch: &Arc<AtomicU32>) {
+    match ureq::post("https://manager-api.gametools.network/api/seederinfo").timeout(Duration::new(10, 0)).send_json(
         ureq::json!({
             "groupid": cfg.group_id,
             "isrunning": game_info.is_running,
-            "hostname": cfg.hostname
+            "retrycount": retry_launch.load(atomic::Ordering::Relaxed),
+            "hostname": cfg.hostname,
+            "isoriginrunning": origin_info.is_running
         }),
     ) {
         Ok(_) => {}
@@ -117,6 +119,21 @@ pub fn ping_backend(cfg: &structs::SeederConfig, game_info: &structs::GameInfo) 
 pub fn is_running() -> structs::GameInfo {
     unsafe {
         let window: Vec<u16> = OsStr::new("Battlefield™ 1")
+            .encode_wide()
+            .chain(once(0))
+            .collect();
+        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
+        let no_game: *mut HWND__ = ptr::null_mut();
+        structs::GameInfo {
+            is_running: window_handle != no_game,
+            game_process: window_handle,
+        }
+    }
+}
+
+pub fn is_origin_running() -> structs::GameInfo {
+    unsafe {
+        let window: Vec<u16> = OsStr::new("Origin")
             .encode_wide()
             .chain(once(0))
             .collect();
