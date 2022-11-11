@@ -1,11 +1,12 @@
-group_id = '6852845a-850d-11eb-b244-0a58a9feac02'
+group_id = '713a4d24-0148-11ed-9ae7-0a58a9feac02'
 game_location = 'C:\Program Files (x86)\Origin Games\Battlefield 1\bf1.exe'
-hostname = 'Jobse-Laptop'
+hostname = 'WIN-IB228OQ723N'
 allow_shutdown = false
 send_messages = false
 usable_client = true
 fullscreen_anti_afk = true
-message = 'Join our discord, we are recruiting: discord.gg/...'
+use_ea_desktop = true
+message = 'Join our discord, we are recruiting: ...'
 message_server_name = ''
 message_start_time_utc = '12:00'
 message_stop_time_utc = '23:00'

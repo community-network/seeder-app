@@ -1,7 +1,7 @@
 use std::{mem, thread::sleep, time::Duration};
 use winapi::um::winuser::{INPUT, INPUT_KEYBOARD, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, SendInput};
 
-use crate::chars::DXCode;
+use crate::input::chars::DXCode;
 // key codes: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
 
 unsafe fn create_input(key_code: u16, wvk: u16, flags: u32) -> INPUT {

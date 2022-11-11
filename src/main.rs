@@ -6,9 +6,8 @@ use std::{
 use std::collections::HashMap;
 mod actions;
 mod functions;
-mod send_keys;
+mod input;
 mod structs;
-mod chars;
 
 
 fn main() {
@@ -42,6 +41,7 @@ fn main() {
                 send_messages: false,
                 usable_client: true,
                 fullscreen_anti_afk: true,
+                use_ea_desktop: false,
                 message: "Join our discord, we are recruiting: ...".into(),
                 message_server_name: "".into(),
                 message_start_time_utc: "12:00".into(),
@@ -58,7 +58,7 @@ fn main() {
     // anti afk thread, runs when game is in "joined" state
     let afk_cfg = cfg.clone();
     thread::spawn(move || loop {
-        functions::anti_afk(
+        functions::anti_afk::start(
             &afk_cfg,
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
@@ -70,7 +70,7 @@ fn main() {
     // send messages in server thread
     let message_cfg = cfg.clone();
     thread::spawn(move || loop {
-        functions::auto_message(
+        functions::auto_message::start(
             &game_running_clone_message,
             &retry_launch_clone_message,
             &message_cfg,
@@ -97,7 +97,7 @@ fn main() {
         match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
             Ok(response) => match response.into_json::<structs::CurrentServer>() {
                 Ok(seeder_info) => {
-                    functions::seed_server(
+                    functions::seed_server::start(
                         seeder_info,
                         &mut old_seeder_info,
                         &cfg,
