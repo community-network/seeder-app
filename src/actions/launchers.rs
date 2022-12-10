@@ -40,15 +40,16 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
     }
 
     let mut timeout = 0;
-    let mut is_running = false;
-    while is_running
+    let mut not_running = true;
+    while not_running
     {
         if timeout > 10 { // give up on to many tries waiting and continue anyway
+            println!("waiting to long, continueing..");
             break;
         }
 
-        is_running = is_ea_desktop_running().is_running;
-        sleep(Duration::from_secs(3));
+        not_running = !super::game::is_running().is_running;
+        sleep(Duration::from_secs(5));
         timeout += 1;
     }
 
