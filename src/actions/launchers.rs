@@ -38,6 +38,7 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         Ok(_) => println!("game launched"),
         Err(e) => println!("failed to launch game: {}", e),
     }
+    sleep(Duration::from_secs(15));
 }
 
 pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
