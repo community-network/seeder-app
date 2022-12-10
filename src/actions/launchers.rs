@@ -23,7 +23,7 @@ pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_g
 
 pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
     // it needs to restart launcher
-    // if game_id != old_game_id {
+    if game_id != old_game_id {
         stop_ea_desktop();
         edit_ea_desktop(format!(
             "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
@@ -31,7 +31,8 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
             role,
             &(role == "spectator").to_string()[..],
         ).into());
-    // }
+    }
+    sleep(Duration::from_secs(5));
 
     let mut command = Command::new(cfg.game_location.clone());
     match command.spawn() {
@@ -320,7 +321,7 @@ pub fn edit_ea_desktop(launch_settings: String) {
     match new_conf.section_mut(None::<String>) {
         Some(conf) => {
             if !conf.contains_key("user.gamecommandline.origin.ofr.50.0000557") {
-                println!("Game not found in config, please launch the game once first.")
+                conf.insert("user.gamecommandline.origin.ofr.50.0000557", launch_settings.clone());
             }
         },
         None => {},
