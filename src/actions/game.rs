@@ -1,7 +1,6 @@
 use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::prelude::OsStrExt;
-use std::process::Command;
 use std::ptr;
 use std::thread::sleep;
 use std::time::Duration;
@@ -11,9 +10,9 @@ use winapi::shared::windef::{HWND__, LPRECT, RECT};
 use winapi::um::winuser::{
     FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow, GetForegroundWindow, SendMessageW
 };
-
-use crate::chars::{char_to_dxcodes, DXCode};
-use crate::{send_keys, structs};
+use crate::actions::launchers;
+use crate::input::{chars::{char_to_dxcodes, DXCode}, send_keys};
+use crate::structs;
 use crate::structs::GameInfo;
 use winapi::um::winuser::IsIconic;
 
@@ -41,7 +40,7 @@ pub fn is_fullscreen() -> bool {
     }
 }
 
-pub fn minimize_game(game_info: &GameInfo) {
+pub fn minimize(game_info: &GameInfo) {
     unsafe {
         // check minimized or minimize
         if IsIconic(game_info.game_process) == 0 {
@@ -53,7 +52,7 @@ pub fn minimize_game(game_info: &GameInfo) {
 pub fn anti_afk() {
     let game_info = is_running();
     if game_info.is_running {
-        minimize_game(&game_info);
+        minimize(&game_info);
         // check minimized here??
         unsafe {
             let current_forground_window = GetForegroundWindow();
@@ -101,21 +100,6 @@ pub fn send_message(to_send: &String) {
     }
 }
 
-pub fn ping_backend(cfg: &structs::SeederConfig, game_info: &structs::GameInfo, origin_info: &structs::GameInfo, retry_launch: &Arc<AtomicU32>) {
-    match ureq::post("https://manager-api.gametools.network/api/seederinfo").timeout(Duration::new(10, 0)).send_json(
-        ureq::json!({
-            "groupid": cfg.group_id,
-            "isrunning": game_info.is_running,
-            "retrycount": retry_launch.load(atomic::Ordering::Relaxed),
-            "hostname": cfg.hostname,
-            "isoriginrunning": origin_info.is_running
-        }),
-    ) {
-        Ok(_) => {}
-        Err(_) => println!("Couln't send update of client to backend"),
-    }
-}
-
 pub fn is_running() -> structs::GameInfo {
     unsafe {
         let window: Vec<u16> = OsStr::new("Battlefield™ 1")
@@ -131,28 +115,20 @@ pub fn is_running() -> structs::GameInfo {
     }
 }
 
-pub fn is_origin_running() -> structs::GameInfo {
-    unsafe {
-        let window: Vec<u16> = OsStr::new("Origin")
-            .encode_wide()
-            .chain(once(0))
-            .collect();
-        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
-        let no_game: *mut HWND__ = ptr::null_mut();
-        structs::GameInfo {
-            is_running: window_handle != no_game,
-            game_process: window_handle,
-        }
-    }
-}
-
-pub fn quit_game(game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
+pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
     println!("Quitting old session..");
     let game_process = winproc::Process::from_name("bf1.exe");
     match game_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
                 println!("closed the game");
+
+                if cfg.use_ea_desktop {
+                    println!("waiting 5 seconds for game to close...");
+                    sleep(Duration::from_secs(5));
+                    println!("ready!");
+                }
+
                 game_running.store(0, atomic::Ordering::Relaxed);
                 retry_launch.store(0, atomic::Ordering::Relaxed);
             }
@@ -166,38 +142,12 @@ pub fn quit_game(game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
     }
 }
 
-pub fn restart_origin() {
-    println!("Restarting Origin");
-    let game_process = winproc::Process::from_name("Origin.exe");
-    let mut command = Command::new("C:\\Program Files (x86)\\Origin\\Origin.exe");
-    match game_process {
-        Ok(mut process) => match process.terminate(1) {
-            Ok(_) => {
-                println!("Closed Origin");
-                sleep(Duration::from_secs(10));
-            }
-            Err(e) => println!("failed to close origin (likely permissions): {}", e)
-        },
-        Err(_) => {
-            println!("origin not found!");
-        }
-    }
-    match command.spawn()
-    {
-        Ok(_) => {
-            println!("origin launched");
-            sleep(Duration::from_secs(150));
-        }
-        Err(e) => println!("failed to launch origin: {}", e),
-    }
-}
-
-pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str, 
-    game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
+pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str, 
+    game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>, old_game_id: &str) {
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
         // if it tried to launch but failed twice
         if retry_launch.load(atomic::Ordering::Relaxed) == 10 {
-            restart_origin();
+            launchers::restart_launcher(cfg);
             // make retries 0
             retry_launch.store(0, atomic::Ordering::Relaxed);
         } else {
@@ -206,66 +156,6 @@ pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str,
         }
     }
     println!("joining id: {}", game_id);
-    let mut command = Command::new(cfg.game_location.clone());
-    if cfg.usable_client {
-        command.args([
-            "-webMode",
-            "MP",
-            "-Origin_NoAppFocus",
-            "--activate-webhelper",
-            "-requestState",
-            "State_ClaimReservation",
-            "-gameId",
-            game_id,
-            "-gameMode",
-            "MP",
-            "-role",
-            role,
-            "-asSpectator",
-            &(role == "spectator").to_string()[..],
-        ]);
-    } else {
-        command.args([
-            "-Window.Fullscreen",
-            "false",
-            "-RenderDevice.MinDriverRequired",
-            "false",
-            "-Core.HardwareGpuBias",
-            "-1",
-            "-Core.HardwareCpuBias",
-            "-1",
-            "-Core.HardwareProfile",
-            "Hardware_Low",
-            "-RenderDevice.CreateMinimalWindow",
-            "true",
-            "-RenderDevice.NullDriverEnable",
-            "true",
-            "-Texture.LoadingEnabled",
-            "false",
-            "-Texture.RenderTexturesEnabled",
-            "false",
-            "-Client.TerrainEnabled",
-            "false",
-            "-Decal.SystemEnable",
-            "false",
-            "-webMode",
-            "MP",
-            "-Origin_NoAppFocus",
-            "--activate-webhelper",
-            "-requestState",
-            "State_ClaimReservation",
-            "-gameId",
-            game_id,
-            "-gameMode",
-            "MP",
-            "-role",
-            role,
-            "-asSpectator",
-            &(role == "spectator").to_string()[..],
-        ]);
-    }
-    match command.spawn() {
-        Ok(_) => println!("game launched"),
-        Err(e) => println!("failed to launch game: {}", e),
-    }
+
+    launchers::launch_game(cfg, game_id, role, old_game_id)
 }

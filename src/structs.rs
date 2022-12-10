@@ -18,6 +18,7 @@ pub struct SeederConfig {
     pub send_messages: bool,
     pub usable_client: bool,
     pub fullscreen_anti_afk: bool,
+    pub use_ea_desktop: bool,
     pub message: String,
     pub message_server_name: String,
     pub message_start_time_utc: String,
@@ -57,6 +58,7 @@ impl ::std::default::Default for SeederConfig {
             send_messages: false,
             usable_client: true,
             fullscreen_anti_afk: true,
+            use_ea_desktop: false,
             message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
             message_server_name: "[BoB]#1 EU".into(),
             message_start_time_utc: "12:00".into(),
@@ -75,4 +77,11 @@ pub struct ServerList {
 pub struct ServerInfo {
     #[serde(rename = "gameId")]
     pub game_id: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct EaDesktopNewestFile {
+    pub file_name: String,
+    pub time: u64,
+    pub location: String
 }
