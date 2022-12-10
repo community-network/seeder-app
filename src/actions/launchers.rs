@@ -25,12 +25,21 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
     // it needs to restart launcher
     if game_id != old_game_id {
         stop_ea_desktop();
-        edit_ea_desktop(format!(
-            "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
-            game_id,
-            role,
-            &(role == "spectator").to_string()[..],
-        ).into());
+        let join_config = match cfg.usable_client {
+            true => format!(
+                "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+                game_id,
+                role,
+                &(role == "spectator").to_string()[..],
+            ).into(),
+            false => format!(
+                "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+                game_id,
+                role,
+                &(role == "spectator").to_string()[..],
+            ).into(),
+        };
+        edit_ea_desktop(join_config);
     }
     sleep(Duration::from_secs(5));
 
