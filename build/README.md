@@ -5,7 +5,7 @@
 
 Battlefield One Autoseeding app design to improve starting of community servers. 
 Automaticly join server to quickly populate it. 
-This script is tested with the Origin client, we can't guarantee proper functionality in the EA Desktop app: https://www.origin.com/nld/en-us/store/download
+It supports both ea desktop and origin (if you somehow still manage to still origin...)
 
 ### Example of the config.txt file:
 ```py
@@ -26,6 +26,8 @@ usable_client = true
 send_messages = false
 # if disabled, anti-afk won't work when in fullscreen (some people play with the script still running, this stops the script from minimizing the game when fullscreen is detected)
 fullscreen_anti_afk = true
+# use ea desktop
+use_ea_desktop = true
 
 # what message has to be send to the server with automated messages. if you want multiple messages, seperate them with ";"
 message = 'Join our discord, we are recruiting: discord.gg/...'

@@ -15,6 +15,8 @@ usable_client = true
 send_messages = false
 # if disabled, anti-afk won't work when in fullscreen (some people play with the script still running, this stops the script from minimizing the game when fullscreen is detected)
 fullscreen_anti_afk = true
+# use ea deskto
+use_ea_desktop = true
 
 # what message has to be send to the server with automated messages. if you want multiple messages, seperate them with ";"
 message = 'Join our discord, we are recruiting: discord.gg/...'
