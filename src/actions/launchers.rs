@@ -16,15 +16,15 @@ use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
     if cfg.use_ea_desktop {
+        println!("Launching game after EA Desktop startup...");
         return launch_game_ea_desktop(cfg, game_id, role, old_game_id);
     }
-    println!("Launching game after EA Desktop startup...");
     launch_game_origin(cfg, game_id, role)
 }
 
 pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
     // it needs to restart launcher
-    if game_id != old_game_id {
+    // if game_id != old_game_id {
         stop_ea_desktop();
         edit_ea_desktop(format!(
             "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
@@ -32,8 +32,7 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
             role,
             &(role == "spectator").to_string()[..],
         ).into());
-        start_ea_desktop();
-    }
+    // }
 
     let mut command = Command::new("cmd");
     command.args(&["/C", "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Battlefield 1\\Battlefield 1.lnk"]);
@@ -155,34 +154,17 @@ pub fn restart_launcher(cfg: &structs::SeederConfig) {
 pub fn restart_ea_desktop() {
     println!("Restarting EA Desktop");
     stop_ea_desktop();
-    start_ea_desktop();
 }
 
 pub fn stop_ea_desktop() {
-    let ea_desktop_process = winproc::Process::from_name("EADesktop.exe");
-    match ea_desktop_process {
-        Ok(mut process) => match process.terminate(1) {
-            Ok(_) => {
-                println!("Closed EA Desktop");
-                sleep(Duration::from_secs(10));
-            }
-            Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e),
-        },
-        Err(_) => {
-            println!("EA Desktop not found!");
-        }
-    }
-}
-
-pub fn start_ea_desktop() {
-    let mut command = Command::new("cmd");
-    command.args(&["/C", "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\EA\\EA.lnk"]);
-    match command.execute() {
+    let mut command = Command::new("taskkill /f /t /im EADesktop.exe");
+    match command.spawn()
+    {
         Ok(_) => {
-            println!("EA Desktop launched");
-            sleep(Duration::from_secs(40));
+            println!("Closed EA Desktop");
+            sleep(Duration::from_secs(10));
         },
-        Err(e) => println!("Failed to launch EA Desktop: {}", e),
+        Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e),
     }
 }
 

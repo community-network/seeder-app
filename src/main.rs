@@ -11,22 +11,22 @@ mod structs;
 
 
 fn main() {
-    // game_running based on api, 0 == leaving servers. 1 means joining servers.
-    let game_running = Arc::new(atomic::AtomicU32::new(0));
-    let game_running_clone_anti_afk = Arc::clone(&game_running);
-    let game_running_clone_message = Arc::clone(&game_running);
+    // // game_running based on api, 0 == leaving servers. 1 means joining servers.
+    // let game_running = Arc::new(atomic::AtomicU32::new(0));
+    // let game_running_clone_anti_afk = Arc::clone(&game_running);
+    // let game_running_clone_message = Arc::clone(&game_running);
 
-    let message_running = Arc::new(atomic::AtomicU32::new(0));
-    let message_running_clone = Arc::clone(&message_running);
-    let message_running_clone_anti_afk = Arc::clone(&message_running);
+    // let message_running = Arc::new(atomic::AtomicU32::new(0));
+    // let message_running_clone = Arc::clone(&message_running);
+    // let message_running_clone_anti_afk = Arc::clone(&message_running);
 
-    let current_message_id = Arc::new(atomic::AtomicU32::new(0));
+    // let current_message_id = Arc::new(atomic::AtomicU32::new(0));
 
-    let message_timeout = Arc::new(atomic::AtomicU32::new(0));
+    // let message_timeout = Arc::new(atomic::AtomicU32::new(0));
 
-    let retry_launch = Arc::new(atomic::AtomicU32::new(0));
-    let retry_launch_clone_message = Arc::clone(&retry_launch);
-    // get/set config
+    // let retry_launch = Arc::new(atomic::AtomicU32::new(0));
+    // let retry_launch_clone_message = Arc::clone(&retry_launch);
+    // // get/set config
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
         Ok(config) => config,
         Err(e) => {
@@ -50,72 +50,74 @@ fn main() {
             }
         }
     };
-    confy::store_path("config.txt", cfg.clone()).unwrap();
-    if cfg.group_id == "" {
-        println!("group_id isn't set!");
-    }
+    
+    actions::launchers::launch_game(&cfg, "7984959790101", "soldier", "0");
+    // confy::store_path("config.txt", cfg.clone()).unwrap();
+    // if cfg.group_id == "" {
+    //     println!("group_id isn't set!");
+    // }
 
-    // anti afk thread, runs when game is in "joined" state
-    let afk_cfg = cfg.clone();
-    thread::spawn(move || loop {
-        functions::anti_afk::start(
-            &afk_cfg,
-            &game_running_clone_anti_afk,
-            &message_running_clone_anti_afk,
-            &message_timeout,
-            &current_message_id
-        )
-    });
+    // // anti afk thread, runs when game is in "joined" state
+    // let afk_cfg = cfg.clone();
+    // thread::spawn(move || loop {
+    //     functions::anti_afk::start(
+    //         &afk_cfg,
+    //         &game_running_clone_anti_afk,
+    //         &message_running_clone_anti_afk,
+    //         &message_timeout,
+    //         &current_message_id
+    //     )
+    // });
 
-    // send messages in server thread
-    let message_cfg = cfg.clone();
-    thread::spawn(move || loop {
-        functions::auto_message::start(
-            &game_running_clone_message,
-            &retry_launch_clone_message,
-            &message_cfg,
-            &message_running,
-        );
-    });
+    // // send messages in server thread
+    // let message_cfg = cfg.clone();
+    // thread::spawn(move || loop {
+    //     functions::auto_message::start(
+    //         &game_running_clone_message,
+    //         &retry_launch_clone_message,
+    //         &message_cfg,
+    //         &message_running,
+    //     );
+    // });
 
-    // do seeding
-    let mut old_seeder_info = structs::CurrentServer {
-        game_id: "".into(),
-        action: "leaveServer".into(),
-        group_id: cfg.group_id.clone(),
-        timestamp: chrono::Utc::now().timestamp(),
-        keep_alive_seeders: HashMap::new(),
-        seeder_arr: vec![],
-        rejoin: true,
-    };
-    let connect_addr = format!(
-        "https://manager-api.gametools.network/api/getseeder?groupid={}",
-        cfg.group_id
-    );
-    println!("firing of latest request found (default on startup script)");
-    loop {
-        match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
-            Ok(response) => match response.into_json::<structs::CurrentServer>() {
-                Ok(seeder_info) => {
-                    functions::seed_server::start(
-                        seeder_info,
-                        &mut old_seeder_info,
-                        &cfg,
-                        &game_running,
-                        &retry_launch,
-                        &message_running_clone,
-                    );
-                }
-                Err(e) => {
-                    println!("Failed to get info about server to join: {}", e);
-                    println!("reconnecting...");
-                }
-            },
-            Err(e) => {
-                println!("Failed to connect to backend: {}", e);
-                println!("reconnecting...");
-            }
-        }
-        sleep(Duration::from_secs(10));
-    }
+    // // do seeding
+    // let mut old_seeder_info = structs::CurrentServer {
+    //     game_id: "".into(),
+    //     action: "leaveServer".into(),
+    //     group_id: cfg.group_id.clone(),
+    //     timestamp: chrono::Utc::now().timestamp(),
+    //     keep_alive_seeders: HashMap::new(),
+    //     seeder_arr: vec![],
+    //     rejoin: true,
+    // };
+    // let connect_addr = format!(
+    //     "https://manager-api.gametools.network/api/getseeder?groupid={}",
+    //     cfg.group_id
+    // );
+    // println!("firing of latest request found (default on startup script)");
+    // loop {
+    //     match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
+    //         Ok(response) => match response.into_json::<structs::CurrentServer>() {
+    //             Ok(seeder_info) => {
+    //                 functions::seed_server::start(
+    //                     seeder_info,
+    //                     &mut old_seeder_info,
+    //                     &cfg,
+    //                     &game_running,
+    //                     &retry_launch,
+    //                     &message_running_clone,
+    //                 );
+    //             }
+    //             Err(e) => {
+    //                 println!("Failed to get info about server to join: {}", e);
+    //                 println!("reconnecting...");
+    //             }
+    //         },
+    //         Err(e) => {
+    //             println!("Failed to connect to backend: {}", e);
+    //             println!("reconnecting...");
+    //         }
+    //     }
+    //     sleep(Duration::from_secs(10));
+    // }
 }
