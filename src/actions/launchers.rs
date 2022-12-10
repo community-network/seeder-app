@@ -34,9 +34,8 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         ).into());
     // }
 
-    let mut command = Command::new("cmd");
-    command.args(&["/C", "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Battlefield 1\\Battlefield 1.lnk"]);
-    match command.execute() {
+    let mut command = Command::new(cfg.game_location.clone());
+    match command.spawn() {
         Ok(_) => println!("game launched"),
         Err(e) => println!("failed to launch game: {}", e),
     }

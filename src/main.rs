@@ -51,7 +51,7 @@ fn main() {
         }
     };
     
-    actions::launchers::launch_game(&cfg, "7984959790101", "soldier", "0");
+    actions::launchers::launch_game(&cfg, "7948060780567", "soldier", "0");
     // confy::store_path("config.txt", cfg.clone()).unwrap();
     // if cfg.group_id == "" {
     //     println!("group_id isn't set!");
