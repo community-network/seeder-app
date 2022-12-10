@@ -38,7 +38,21 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         Ok(_) => println!("game launched"),
         Err(e) => println!("failed to launch game: {}", e),
     }
-    sleep(Duration::from_secs(15));
+
+    let mut timeout = 0;
+    let mut is_running = false;
+    while is_running
+    {
+        if timeout > 10 { // give up on to many tries waiting and continue anyway
+            break;
+        }
+
+        is_running = is_ea_desktop_running().is_running;
+        sleep(Duration::from_secs(3));
+        timeout += 1;
+    }
+
+    sleep(Duration::from_secs(10));
 }
 
 pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
