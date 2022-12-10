@@ -155,15 +155,29 @@ pub fn restart_ea_desktop() {
 }
 
 pub fn stop_ea_desktop() {
-    let mut command = Command::new("taskkill /f /t /im EADesktop.exe");
-    match command.spawn()
-    {
-        Ok(_) => {
-            println!("Closed EA Desktop");
-            sleep(Duration::from_secs(10));
+    let origin_process = winproc::Process::from_name("EADesktop.exe");
+    match origin_process {
+        Ok(mut process) => match process.terminate(1) {
+            Ok(_) => {
+                println!("Closed EA Desktop");
+                sleep(Duration::from_secs(10));
+            }
+            Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e)
         },
-        Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e),
+        Err(_) => {
+            println!("EA desktop not found!");
+        }
     }
+
+    // let mut command = Command::new("taskkill /f /t /im EADesktop.exe");
+    // match command.spawn()
+    // {
+    //     Ok(_) => {
+    //         println!("Closed EA Desktop");
+    //         sleep(Duration::from_secs(10));
+    //     },
+    //     Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e),
+    // }
 }
 
 pub fn restart_origin() {
