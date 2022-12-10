@@ -115,13 +115,20 @@ pub fn is_running() -> structs::GameInfo {
     }
 }
 
-pub fn quit(game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
+pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
     println!("Quitting old session..");
     let game_process = winproc::Process::from_name("bf1.exe");
     match game_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
                 println!("closed the game");
+
+                if cfg.use_ea_desktop {
+                    println!("waiting 5 seconds for game to close...");
+                    sleep(Duration::from_secs(5));
+                    println!("ready!");
+                }
+
                 game_running.store(0, atomic::Ordering::Relaxed);
                 retry_launch.store(0, atomic::Ordering::Relaxed);
             }

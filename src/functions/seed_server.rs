@@ -37,7 +37,7 @@ pub fn start(
             && (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer") 
             || (message_running.load(atomic::Ordering::Relaxed) == 1)    
             {
-                actions::game::quit(&game_running, &retry_launch);
+                actions::game::quit(cfg, &game_running, &retry_launch);
                 // message is not running while seeding
                 message_running.store(0, atomic::Ordering::Relaxed);
             }
@@ -51,7 +51,7 @@ pub fn start(
             if (old_game_id != current_game_id && &old_seeder_info.action[..]!="leaveServer")
             || (message_running.load(atomic::Ordering::Relaxed) == 1)
             {
-                actions::game::quit(&game_running, &retry_launch);
+                actions::game::quit(cfg, &game_running, &retry_launch);
                 // message is not running while seeding
                 message_running.store(0, atomic::Ordering::Relaxed);
             }
@@ -61,7 +61,7 @@ pub fn start(
         } else if &seeder_info.action[..] == "restartOrigin" && !a_minute {
             if game_info.is_running
             {
-                actions::game::quit(&game_running, &retry_launch);
+                actions::game::quit(cfg, &game_running, &retry_launch);
             }
             actions::launchers::restart_launcher(cfg);
         } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
@@ -78,7 +78,7 @@ pub fn start(
             println!("broadcasting message...");
             actions::game::send_message(&seeder_info.game_id);
         } else if &seeder_info.action[..] == "leaveServer" {
-            actions::game::quit(&game_running, &retry_launch);
+            actions::game::quit(cfg, &game_running, &retry_launch);
             // game state == no game
         }
     } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
