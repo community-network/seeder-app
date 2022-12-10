@@ -11,7 +11,6 @@ use winapi::um::winuser::FindWindowW;
 use regex::Regex;
 use ini::Ini;
 use directories::BaseDirs;
-use execute::Execute;
 use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
