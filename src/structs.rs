@@ -58,7 +58,7 @@ impl ::std::default::Default for SeederConfig {
             send_messages: false,
             usable_client: true,
             fullscreen_anti_afk: true,
-            use_ea_desktop: false,
+            use_ea_desktop: true,
             message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
             message_server_name: "[BoB]#1 EU".into(),
             message_start_time_utc: "12:00".into(),
