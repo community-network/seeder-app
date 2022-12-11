@@ -25,22 +25,22 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
     // it needs to restart launcher
     if game_id != old_game_id {
         stop_ea_desktop();
-        let join_config = match cfg.usable_client {
-            true => format!(
-                "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
-                game_id,
-                role,
-                &(role == "spectator").to_string()[..],
-            ).into(),
-            false => format!(
-                "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
-                game_id,
-                role,
-                &(role == "spectator").to_string()[..],
-            ).into(),
-        };
-        edit_ea_desktop(join_config);
     }
+    let join_config = match cfg.usable_client {
+        true => format!(
+            "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+            game_id,
+            role,
+            &(role == "spectator").to_string()[..],
+        ).into(),
+        false => format!(
+            "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+            game_id,
+            role,
+            &(role == "spectator").to_string()[..],
+        ).into(),
+    };
+    edit_ea_desktop(join_config);
     sleep(Duration::from_secs(5));
 
     let mut command = Command::new(cfg.game_location.clone());
@@ -62,6 +62,9 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         sleep(Duration::from_secs(5));
         timeout += 1;
     }
+
+    // reset config after gamelaunch
+    edit_ea_desktop("".to_string());
 
     sleep(Duration::from_secs(10));
 }
@@ -194,16 +197,6 @@ pub fn stop_ea_desktop() {
             println!("EA desktop not found!");
         }
     }
-
-    // let mut command = Command::new("taskkill /f /t /im EADesktop.exe");
-    // match command.spawn()
-    // {
-    //     Ok(_) => {
-    //         println!("Closed EA Desktop");
-    //         sleep(Duration::from_secs(10));
-    //     },
-    //     Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e),
-    // }
 }
 
 pub fn restart_origin() {
@@ -233,7 +226,11 @@ pub fn restart_origin() {
 }
 
 pub fn edit_ea_desktop(launch_settings: String) {
-    println!("Changing EA Desktop config...");
+    if launch_settings == "".to_string() {
+        println!("Resetting EA Desktop config...");
+    } else {
+        println!("Changing EA Desktop config...");
+    }
     let base_dirs = match BaseDirs::new() {
         Some(base) => base,
         None => return println!("Generic base dir gather failure, are you not on Windows?"),
@@ -297,7 +294,9 @@ pub fn edit_ea_desktop(launch_settings: String) {
     }
 
     if newest_file.file_name != "" {
-        println!("Using EA Desktop config file: {}", newest_file.file_name);
+        if launch_settings != "".to_string() {
+            println!("Using EA Desktop config file: {}", newest_file.file_name);
+        }
     } else {
         return println!("Failed to find config file for ea launcher, please login first!");
     }

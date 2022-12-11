@@ -41,7 +41,7 @@ fn main() {
                 send_messages: false,
                 usable_client: true,
                 fullscreen_anti_afk: true,
-                use_ea_desktop: false,
+                use_ea_desktop: true,
                 message: "Join our discord, we are recruiting: ...".into(),
                 message_server_name: "".into(),
                 message_start_time_utc: "12:00".into(),

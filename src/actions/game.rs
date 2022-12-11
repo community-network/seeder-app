@@ -140,6 +140,11 @@ pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_la
             println!("no game process found!");
         }
     }
+
+    // quit ea desktop to reset config
+    if cfg.use_ea_desktop {
+        launchers::stop_ea_desktop();
+    }
 }
 
 pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str, 
