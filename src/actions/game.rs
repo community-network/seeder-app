@@ -148,7 +148,7 @@ pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_la
 }
 
 pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str, 
-    game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>, old_game_id: &str) {
+    game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
         // if it tried to launch but failed twice
         if retry_launch.load(atomic::Ordering::Relaxed) == 10 {
@@ -162,5 +162,5 @@ pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str,
     }
     println!("joining id: {}", game_id);
 
-    launchers::launch_game(cfg, game_id, role, old_game_id)
+    launchers::launch_game(cfg, game_id, role)
 }

@@ -43,7 +43,7 @@ pub fn start(
             }
             if !game_info.is_running
             {
-                actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch, old_game_id);
+                actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
             }
             game_running.store(1, atomic::Ordering::Relaxed);
         } else if &seeder_info.action[..] == "joinServer" {
@@ -55,7 +55,7 @@ pub fn start(
                 // message is not running while seeding
                 message_running.store(0, atomic::Ordering::Relaxed);
             }
-            actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch, old_game_id);
+            actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
             // game state == running game
             game_running.store(1, atomic::Ordering::Relaxed);
         } else if &seeder_info.action[..] == "restartOrigin" && !a_minute {
@@ -88,7 +88,7 @@ pub fn start(
             || kp_seeder)
         {
             println!("didn't find game running, starting..");
-            actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch, old_game_id);
+            actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
         }
         //set retries 0
         if game_info.is_running

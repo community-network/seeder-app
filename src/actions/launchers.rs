@@ -13,19 +13,18 @@ use ini::Ini;
 use directories::BaseDirs;
 use crate::structs;
 
-pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
+pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     if cfg.use_ea_desktop {
         println!("Launching game after EA Desktop startup...");
-        return launch_game_ea_desktop(cfg, game_id, role, old_game_id);
+        return launch_game_ea_desktop(cfg, game_id, role);
     }
     launch_game_origin(cfg, game_id, role)
 }
 
-pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str, old_game_id: &str) {
+pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     // it needs to restart launcher
-    if game_id != old_game_id {
-        stop_ea_desktop();
-    }
+    stop_ea_desktop();
+    sleep(Duration::from_secs(5));
     let join_config = match cfg.usable_client {
         true => format!(
             "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
@@ -41,7 +40,6 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         ).into(),
     };
     edit_ea_desktop(join_config);
-    sleep(Duration::from_secs(5));
 
     let mut command = Command::new(cfg.game_location.clone());
     match command.spawn() {
