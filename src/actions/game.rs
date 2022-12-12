@@ -6,6 +6,7 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::sync::{atomic, Arc};
 use std::sync::atomic::AtomicU32;
+use registry::{Hive, Security};
 use winapi::shared::windef::{HWND__, LPRECT, RECT};
 use winapi::um::winuser::{
     FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow, GetForegroundWindow, SendMessageW
@@ -37,6 +38,25 @@ pub fn is_fullscreen() -> bool {
         }
     } else {
         false
+    }
+}
+
+pub fn find_game() -> String {
+    match Hive::LocalMachine.open(r"SOFTWARE\Wow6432Node\EA Games\Battlefield 1", Security::Read) {
+        Ok(regkey) => {
+            match regkey.value("Install Dir") {
+                Ok(result) => format!("{}bf1.exe", result.to_string()),
+                Err(_) => {
+                    println!("Battlefield 1 not found in ea desktop's registry");
+                    return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
+                },
+            }
+        },
+        Err(_) => {
+            
+            println!("Battlefield 1 not found in ea desktop's registry");
+            return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
+        }
     }
 }
 

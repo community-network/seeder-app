@@ -35,8 +35,7 @@ fn main() {
             structs::SeederConfig {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
                 group_id: "".into(),
-                game_location: "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe"
-                    .into(),
+                game_location: actions::game::find_game(),
                 allow_shutdown: false,
                 send_messages: false,
                 usable_client: true,
