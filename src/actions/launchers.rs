@@ -310,13 +310,20 @@ pub fn edit_ea_desktop(launch_settings: String) {
     };
     new_conf.with_section(None::<String>).set("user.gamecommandline.origin.ofr.50.0002683", "");
     
+    let game_versions = vec![
+        "user.gamecommandline.origin.ofr.50.0000557",
+        "user.gamecommandline.origin.ofr.50.0001382",
+        "user.gamecommandline.origin.ofr.50.0001665",
+        "user.gamecommandline.origin.ofr.50.0001662"
+    ];
+
     // copy old config
     for (key, value) in old_section.iter() {
         match new_conf.section_mut(None::<String>) {
             Some(conf) => {
-                if key == "user.gamecommandline.origin.ofr.50.0000557" {
+                if game_versions.contains(&key) {
                     // add launch params
-                    conf.insert(key, launch_settings.clone());
+                    conf.remove(key);
                 } else {
                     conf.insert(key, value)
                 }
@@ -326,8 +333,8 @@ pub fn edit_ea_desktop(launch_settings: String) {
     }
     match new_conf.section_mut(None::<String>) {
         Some(conf) => {
-            if !conf.contains_key("user.gamecommandline.origin.ofr.50.0000557") {
-                conf.insert("user.gamecommandline.origin.ofr.50.0000557", launch_settings.clone());
+            for game_version in game_versions {
+                conf.insert(game_version, launch_settings.clone());
             }
         },
         None => {},
