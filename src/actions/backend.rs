@@ -14,6 +14,6 @@ pub fn ping(cfg: &structs::SeederConfig, game_info: &structs::GameInfo, origin_i
         }),
     ) {
         Ok(_) => {}
-        Err(_) => println!("Couln't send update of client to backend"),
+        Err(_) => log::error!("Couln't send update of client to backend"),
     }
 }

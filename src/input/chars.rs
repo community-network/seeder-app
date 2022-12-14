@@ -75,7 +75,6 @@ pub fn char_to_dxcodes(c: char) -> Option<DXCode> {
     if c_u8 < 0x5B && c_u8 > 0x2B {
         let index = c_u8 - 0x2C;
         let code = CHAR_MAPPING[index as usize];
-        // println!("{} {}", index, code);
         if code == 0x0 {
             None
         } else if c.is_ascii_uppercase() {

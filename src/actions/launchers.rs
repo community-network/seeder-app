@@ -15,7 +15,7 @@ use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     if cfg.use_ea_desktop {
-        println!("Launching game after EA Desktop startup...");
+        log::info!("Launching game after EA Desktop startup...");
         return launch_game_ea_desktop(cfg, game_id, role);
     }
     launch_game_origin(cfg, game_id, role)
@@ -43,8 +43,8 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
 
     let mut command = Command::new(cfg.game_location.clone());
     match command.spawn() {
-        Ok(_) => println!("game launched"),
-        Err(e) => println!("failed to launch game: {}", e),
+        Ok(_) => log::info!("game launched"),
+        Err(e) => log::error!("failed to launch game: {}", e),
     }
 
     let mut timeout = 0;
@@ -52,7 +52,7 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
     while not_running
     {
         if timeout > 10 { // give up on to many tries waiting and continue anyway
-            println!("waiting to long, continueing..");
+            log::warn!("waiting to long, continueing..");
             break;
         }
 
@@ -127,8 +127,8 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
         ]);
     }
     match command.spawn() {
-        Ok(_) => println!("game launched"),
-        Err(e) => println!("failed to launch game: {}", e),
+        Ok(_) => log::info!("game launched"),
+        Err(e) => log::error!("failed to launch game: {}", e),
     }
 }
 
@@ -177,7 +177,7 @@ pub fn restart_launcher(cfg: &structs::SeederConfig) {
 }
 
 pub fn restart_ea_desktop() {
-    println!("Restarting EA Desktop");
+    log::info!("Restarting EA Desktop");
     stop_ea_desktop();
 }
 
@@ -186,66 +186,66 @@ pub fn stop_ea_desktop() {
     match origin_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
-                println!("Closed EA Desktop");
+                log::info!("Closed EA Desktop");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => println!("failed to close EA Desktop (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e)
         },
         Err(_) => {
-            println!("EA desktop not found!");
+            log::info!("EA desktop not found!");
         }
     }
 }
 
 pub fn restart_origin() {
-    println!("Restarting Origin");
+    log::info!("Restarting Origin");
     let origin_process = winproc::Process::from_name("Origin.exe");
     let mut command = Command::new("C:\\Program Files (x86)\\Origin\\Origin.exe");
     match origin_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
-                println!("Closed Origin");
+                log::info!("Closed Origin");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => println!("failed to close origin (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close origin (likely permissions): {}", e)
         },
         Err(_) => {
-            println!("origin not found!");
+            log::info!("origin not found!");
         }
     }
     match command.spawn()
     {
         Ok(_) => {
-            println!("origin launched");
+            log::info!("origin launched");
             sleep(Duration::from_secs(20));
         },
-        Err(e) => println!("failed to launch origin: {}", e),
+        Err(e) => log::error!("failed to launch origin: {}", e),
     }
 }
 
 pub fn edit_ea_desktop(launch_settings: String) {
     if launch_settings == "".to_string() {
-        println!("Resetting EA Desktop config...");
+        log::info!("Resetting EA Desktop config...");
     } else {
-        println!("Changing EA Desktop config...");
+        log::info!("Changing EA Desktop config...");
     }
     let base_dirs = match BaseDirs::new() {
         Some(base) => base,
-        None => return println!("Generic base dir gather failure, are you not on Windows?"),
+        None => return log::error!("Generic base dir gather failure, are you not on Windows?"),
     };
     let appdata_local = match base_dirs.data_local_dir().to_str() {
         Some(appdata) => appdata,
-        None => return println!("AppData dir not found, are you not on Windows?"),
+        None => return log::error!("AppData dir not found, are you not on Windows?"),
     };
     let paths = match fs::read_dir(appdata_local.to_owned() + "\\Electronic Arts\\EA Desktop") {
         Ok(paths) => paths,
-        Err(_) => return println!("EA Desktop folder not found in AppData!"),
+        Err(_) => return log::error!("EA Desktop folder not found in AppData!"),
     };
 
     let mut newest_file = structs::EaDesktopNewestFile { time: 0, location: "".into(), file_name: "".into() };
     let re = match Regex::new(r"^user_.*.ini$") {
         Ok(re) => re,
-        Err(_) => return println!("Invalid REGEX for gathering EA desktop"),
+        Err(_) => return log::error!("Invalid REGEX for gathering EA desktop"),
     };
     for path_result in paths {
 
@@ -293,20 +293,20 @@ pub fn edit_ea_desktop(launch_settings: String) {
 
     if newest_file.file_name != "" {
         if launch_settings != "".to_string() {
-            println!("Using EA Desktop config file: {}", newest_file.file_name);
+            log::info!("Using EA Desktop config file: {}", newest_file.file_name);
         }
     } else {
-        return println!("Failed to find config file for ea launcher, please login first!");
+        return log::error!("Failed to find config file for ea launcher, please login first!");
     }
 
     let mut new_conf = Ini::new();
     let old_conf = match Ini::load_from_file(newest_file.location.clone()) {
         Ok(conf) => conf,
-        Err(e) => return println!("Failed to load file: {}", e),
+        Err(e) => return log::error!("Failed to load file: {}", e),
     };
     let old_section = match old_conf.section(None::<String>) {
         Some(section) => section,
-        None => return println!("Empty EA Desktop config file!"),
+        None => return log::error!("Empty EA Desktop config file!"),
     };
     new_conf.with_section(None::<String>).set("user.gamecommandline.origin.ofr.50.0002683", "");
     
@@ -328,7 +328,7 @@ pub fn edit_ea_desktop(launch_settings: String) {
                     conf.insert(key, value)
                 }
             },
-            None => println!("Failed to copy {:?}:{:?}", key, value),
+            None => log::error!("Failed to copy {:?}:{:?}", key, value),
         };
     }
     match new_conf.section_mut(None::<String>) {
@@ -342,6 +342,6 @@ pub fn edit_ea_desktop(launch_settings: String) {
 
     match new_conf.write_to_file(newest_file.location) {
         Ok(_) => {},
-        Err(e) => println!("Failed to save new EA Desktop config: {}", e),
+        Err(e) => log::error!("Failed to save new EA Desktop config: {}", e),
     };
 }

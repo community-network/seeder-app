@@ -3,6 +3,10 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
+use std::io::Write;
+use chrono::Local;
+use env_logger::Builder;
+use log::LevelFilter;
 use std::collections::HashMap;
 mod actions;
 mod functions;
@@ -11,6 +15,18 @@ mod structs;
 
 
 fn main() {
+    Builder::new()
+    .format(|buf, record| {
+        writeln!(buf,
+            "{} [{}] - {}",
+            Local::now().format("%Y-%m-%dT%H:%M:%S"),
+            record.level(),
+            record.args()
+        )
+    })
+    .filter(None, LevelFilter::Info)
+    .init();
+
     // game_running based on api, 0 == leaving servers. 1 means joining servers.
     let game_running = Arc::new(atomic::AtomicU32::new(0));
     let game_running_clone_anti_afk = Arc::clone(&game_running);
@@ -30,8 +46,8 @@ fn main() {
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
         Ok(config) => config,
         Err(e) => {
-            println!("error in config.txt: {}", e);
-            println!("changing back to default..");
+            log::error!("error in config.txt: {}", e);
+            log::warn!("changing back to default..");
             structs::SeederConfig {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
                 group_id: "".into(),
@@ -52,7 +68,7 @@ fn main() {
     
     confy::store_path("config.txt", cfg.clone()).unwrap();
     if cfg.group_id == "" {
-        println!("group_id isn't set!");
+        log::warn!("group_id isn't set!");
     }
 
     // anti afk thread, runs when game is in "joined" state
@@ -92,7 +108,7 @@ fn main() {
         "https://manager-api.gametools.network/api/getseeder?groupid={}",
         cfg.group_id
     );
-    println!("firing of latest request found (default on startup script)");
+    log::info!("firing of latest request found (default on startup script)");
     loop {
         match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
             Ok(response) => match response.into_json::<structs::CurrentServer>() {
@@ -107,13 +123,13 @@ fn main() {
                     );
                 }
                 Err(e) => {
-                    println!("Failed to get info about server to join: {}", e);
-                    println!("reconnecting...");
+                    log::error!("Failed to get info about server to join: {}", e);
+                    log::info!("reconnecting...");
                 }
             },
             Err(e) => {
-                println!("Failed to connect to backend: {}", e);
-                println!("reconnecting...");
+                log::error!("Failed to connect to backend: {}", e);
+                log::info!("reconnecting...");
             }
         }
         sleep(Duration::from_secs(10));

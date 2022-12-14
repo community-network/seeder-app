@@ -36,8 +36,8 @@ pub fn start(
             let message: &str = current_message[message_id as usize];
 
             // send message
-            println!("{}", message);
-            println!("sending message...");
+            log::info!("{}", message);
+            log::info!("sending message...");
             actions::game::send_message(&message.to_string());
             message_timeout.store(0, atomic::Ordering::Relaxed);
 

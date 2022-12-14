@@ -47,14 +47,14 @@ pub fn find_game() -> String {
             match regkey.value("Install Dir") {
                 Ok(result) => format!("{}bf1.exe", result.to_string()),
                 Err(_) => {
-                    println!("Battlefield 1 not found in ea desktop's registry");
+                    log::warn!("Battlefield 1 not found in ea desktop's registry, using default origin location.");
                     return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
                 },
             }
         },
         Err(_) => {
             
-            println!("Battlefield 1 not found in ea desktop's registry");
+            log::warn!("Battlefield 1 not found in ea desktop's registry, using default origin location.");
             return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
         }
     }
@@ -92,16 +92,11 @@ pub fn send_message(to_send: &String) {
     let game_info = is_running();
     if game_info.is_running {
         unsafe {
-            // println!("open");
             SetForegroundWindow(game_info.game_process);
             ShowWindow(game_info.game_process, 9);
-            // println!("wait");
             sleep(Duration::from_millis(5000));
-            // println!("open menu");
             send_keys::key_enter(0x24, 80);
-            // println!("wait");
             sleep(Duration::from_millis(2000));
-            // println!("type message");
             let mut message: Vec<DXCode> = Vec::new();
             for char in to_send.chars() {
                 match char_to_dxcodes(char) {
@@ -111,10 +106,8 @@ pub fn send_message(to_send: &String) {
             }
             send_keys::send_string(message);
             sleep(Duration::from_millis(100));
-            // println!("send enter");
             send_keys::key_enter(0x1C, 80);
             sleep(Duration::from_millis(2500));
-            // println!("minimize");
             ShowWindow(game_info.game_process, 6);
         }
     }
@@ -136,28 +129,28 @@ pub fn is_running() -> structs::GameInfo {
 }
 
 pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
-    println!("Quitting old session..");
+    log::info!("Quitting old session..");
     let game_process = winproc::Process::from_name("bf1.exe");
     match game_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
-                println!("closed the game");
+                log::info!("closed the game");
 
                 if cfg.use_ea_desktop {
-                    println!("waiting 5 seconds for game to close...");
+                    log::info!("waiting 5 seconds for game to close...");
                     sleep(Duration::from_secs(5));
-                    println!("ready!");
+                    log::info!("ready!");
                 }
 
                 game_running.store(0, atomic::Ordering::Relaxed);
                 retry_launch.store(0, atomic::Ordering::Relaxed);
             }
             Err(e) => {
-                println!("failed to close game (likely permissions): {}", e);
+                log::error!("failed to close game (likely permissions): {}", e);
             }
         },
         Err(_) => {
-            println!("no game process found!");
+            log::info!("no game process found!");
         }
     }
 
@@ -180,7 +173,7 @@ pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str,
             retry_launch.fetch_add(1, atomic::Ordering::Relaxed);
         }
     }
-    println!("joining id: {}", game_id);
+    log::info!("joining id: {}", game_id);
 
     launchers::launch_game(cfg, game_id, role)
 }

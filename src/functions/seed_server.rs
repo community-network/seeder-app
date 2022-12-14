@@ -66,28 +66,28 @@ pub fn start(
             actions::launchers::restart_launcher(cfg);
         } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
             match shutdown() {
-                Ok(_) => println!("Shutting down, bye!"),
-                Err(error) => eprintln!("Failed to shut down: {}", error),
+                Ok(_) => log::info!("Shutting down, bye!"),
+                Err(error) => log::error!("Failed to shut down: {}", error),
             }
         } else if &seeder_info.action[..] == "rebootPC" && !a_minute {
             match reboot() {
-                Ok(_) => println!("Rebooting ..."),
-                Err(error) => eprintln!("Failed to reboot: {}", error),
+                Ok(_) => log::info!("Rebooting ..."),
+                Err(error) => log::error!("Failed to reboot: {}", error),
             }
         } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages {
-            println!("broadcasting message...");
+            log::info!("broadcasting message...");
             actions::game::send_message(&seeder_info.game_id);
         } else if &seeder_info.action[..] == "leaveServer" {
             actions::game::quit(cfg, &game_running, &retry_launch);
             // game state == no game
         }
     } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
-        println!("request older than a hour, not running latest request.")
+        log::info!("request older than a hour, not running latest request.")
     } else {
         if !&game_info.is_running && ((&seeder_info.action[..] == "joinServer" && seeder_info.rejoin) 
             || kp_seeder)
         {
-            println!("didn't find game running, starting..");
+            log::warn!("didn't find game running, starting..");
             actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
         }
         //set retries 0

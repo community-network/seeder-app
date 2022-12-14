@@ -20,7 +20,7 @@ pub fn start(
     if (game_running.load(atomic::Ordering::Relaxed) == 0) && cfg.send_messages {
         let start_time = &mut cfg.message_start_time_utc.split(':');
         let stop_time = &mut cfg.message_stop_time_utc.split(':');
-        let low = NaiveTime::from_hms(
+        let low = match NaiveTime::from_hms_opt(
             start_time
                 .next()
                 .unwrap_or("12")
@@ -32,8 +32,11 @@ pub fn start(
                 .parse::<u32>()
                 .unwrap_or(0),
             0,
-        );
-        let high = NaiveTime::from_hms(
+        ) {
+            Some(low) => low,
+            None => return log::error!("Failed to create time object from start time"),
+        };
+        let high = match NaiveTime::from_hms_opt(
             stop_time
                 .next()
                 .unwrap_or("23")
@@ -41,13 +44,16 @@ pub fn start(
                 .unwrap_or(23),
             stop_time.next().unwrap_or("00").parse::<u32>().unwrap_or(0),
             0,
-        );
+        ) {
+            Some(high) => high,
+            None => return log::error!("Failed to create time object from stop time"),
+        };
         let time_of_day = Utc::now().time();
         if (time_of_day > low) && (time_of_day < high) {
             message_running.store(1, atomic::Ordering::Relaxed);
             let game_info = actions::game::is_running();
             if !&game_info.is_running {
-                println!("didn't find game running for message, starting..");
+                log::warn!("didn't find game running for message, starting..");
                 let connect_addr = format!(
                     "https://api.gametools.network/bf1/servers/?name={}&region=all&platform=pc&limit=1&lang=en-us",
                     encode(&cfg.message_server_name[..])
@@ -57,11 +63,11 @@ pub fn start(
                         Ok(server_info) => {
                             actions::game::launch(cfg, &server_info.servers[0].game_id, "spectator", &game_running, &retry_launch);
                         }
-                        Err(_) => println!("Servername not found"),
+                        Err(_) => log::error!("Servername not found"),
                     },
                     Err(e) => {
-                        println!("Failed to connect to Main API: {}", e);
-                        println!("retrying...")
+                        log::error!("Failed to connect to Main API: {}", e);
+                        log::info!("retrying...")
                     }
                 }
             }
