@@ -225,7 +225,7 @@ pub fn restart_origin() {
 
 pub fn edit_ea_desktop(launch_settings: String) {
     if launch_settings == "".to_string() {
-        log::info!("Resetting EA Desktop config...");
+        log::info!("Cleaning up EA Desktop config...");
     } else {
         log::info!("Changing EA Desktop config...");
     }
