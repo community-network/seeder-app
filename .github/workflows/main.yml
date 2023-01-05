@@ -18,7 +18,7 @@ jobs:
           override: true
 
       - name: Build
-        run: cargo build --all --release
+        run: cargo build --bin bf1-seeder --release
       - name: Create folder
         run: |
           cp -R ./target/release/bf1-seeder.exe ./build
