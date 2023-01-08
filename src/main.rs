@@ -48,10 +48,10 @@ fn main() {
         Err(e) => {
             log::error!("error in config.txt: {}", e);
             log::warn!("changing back to default..");
-            structs::SeederConfig {
+            let mut cfg = structs::SeederConfig {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
                 group_id: "".into(),
-                game_location: actions::game::find_game(),
+                game_location: "".into(),
                 allow_shutdown: false,
                 send_messages: false,
                 usable_client: true,
@@ -62,7 +62,10 @@ fn main() {
                 message_start_time_utc: "12:00".into(),
                 message_stop_time_utc: "23:00".into(),
                 message_timeout_mins: 8,
-            }
+                game: structs::Games::from("bf1"),
+            };
+            cfg.game_location = actions::game::find_game(&cfg);
+            cfg
         }
     };
     
@@ -105,8 +108,9 @@ fn main() {
         rejoin: true,
     };
     let connect_addr = format!(
-        "https://manager-api.gametools.network/api/getseeder?groupid={}",
-        cfg.group_id
+        "https://manager-api.gametools.network/api/getseeder?groupid={}&game={}",
+        cfg.group_id,
+        cfg.game.short_name()
     );
     log::info!("firing of latest request found (default on startup script)");
     loop {

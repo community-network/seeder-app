@@ -51,12 +51,12 @@ pub fn start(
         let time_of_day = Utc::now().time();
         if (time_of_day > low) && (time_of_day < high) {
             message_running.store(1, atomic::Ordering::Relaxed);
-            let game_info = actions::game::is_running();
+            let game_info = actions::game::is_running(cfg);
             if !&game_info.is_running {
                 log::warn!("didn't find game running for message, starting..");
                 let connect_addr = format!(
-                    "https://api.gametools.network/bf1/servers/?name={}&region=all&platform=pc&limit=1&lang=en-us",
-                    encode(&cfg.message_server_name[..])
+                    "https://api.gametools.network/{}/servers/?name={}&region=all&platform=pc&limit=1&lang=en-us",
+                    cfg.game.short_name() ,encode(&cfg.message_server_name[..])
                 );
                 match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
                     Ok(response) => match response.into_json::<structs::ServerList>() {

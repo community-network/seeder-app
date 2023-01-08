@@ -20,10 +20,10 @@ fn main() {
     .filter(None, LevelFilter::Info)
     .init();
 
-    let cfg = structs::SeederConfig {
+    let mut cfg = structs::SeederConfig {
         hostname: hostname::get().unwrap().into_string().unwrap(),
         group_id: "".into(),
-        game_location: actions::game::find_game(),
+        game_location: "".into(),
         allow_shutdown: false,
         send_messages: false,
         usable_client: true,
@@ -34,7 +34,9 @@ fn main() {
         message_start_time_utc: "12:00".into(),
         message_stop_time_utc: "23:00".into(),
         message_timeout_mins: 8,
+        game: structs::Games::from("bf1"),
     };
+    cfg.game_location = actions::game::find_game(&cfg);
 
     actions::launchers::launch_game_ea_desktop(&cfg, "7821536030132", "soldier");
 }

@@ -18,11 +18,11 @@ pub fn start(
 ) {
     // run when seeding or message
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
-        let fullscreen = actions::game::is_fullscreen();
+        let fullscreen = actions::game::is_fullscreen(cfg);
         if fullscreen && cfg.fullscreen_anti_afk {
-            actions::game::anti_afk();
+            actions::game::anti_afk(cfg);
         } else if !fullscreen {
-            actions::game::anti_afk();
+            actions::game::anti_afk(cfg);
         }
     }
     if message_running.load(atomic::Ordering::Relaxed) == 1 {
@@ -38,7 +38,7 @@ pub fn start(
             // send message
             log::info!("{}", message);
             log::info!("sending message...");
-            actions::game::send_message(&message.to_string());
+            actions::game::send_message(&message.to_string(), cfg);
             message_timeout.store(0, atomic::Ordering::Relaxed);
 
             // next message in list, 0 if no new items in ";" split
@@ -51,7 +51,7 @@ pub fn start(
             // save
             current_message_id.store(message_id, atomic::Ordering::Relaxed);
         } else {
-            actions::game::anti_afk();
+            actions::game::anti_afk(cfg);
             message_timeout.store(timeout + 1, atomic::Ordering::Relaxed);
         }
     }

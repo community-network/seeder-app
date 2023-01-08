@@ -81,7 +81,7 @@ fn on_command_changed (
         }
     } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages {
         log::info!("broadcasting message...");
-        actions::game::send_message(&seeder_info.game_id);
+        actions::game::send_message(&seeder_info.game_id, cfg);
     } else if &seeder_info.action[..] == "leaveServer" {
         actions::game::quit(cfg, &game_running, &retry_launch);
         // game state == no game
@@ -119,7 +119,7 @@ pub fn start (
     retry_launch: &Arc<AtomicU32>,
     message_running: &Arc<AtomicU32>,
 ) {
-    let game_info = actions::game::is_running();
+    let game_info = actions::game::is_running(cfg);
     let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp() - 3600; // 1 hour since last request
     let mut current_game_id = &seeder_info.game_id[..]; // current server it has to join
     let mut kp_seeder = false; // is multialive seeder bool

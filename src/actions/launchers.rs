@@ -25,21 +25,29 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
     // it needs to restart launcher
     stop_ea_desktop();
     sleep(Duration::from_secs(5));
-    let join_config = match cfg.usable_client {
-        true => format!(
-            "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+    let join_config = match cfg.game {
+        structs::Games::Bf4 => format!(
+            "-gameId {} -gameMode MP -role {} -asSpectator {} -joinWithParty false",
             game_id,
             role,
             &(role == "spectator").to_string()[..],
         ).into(),
-        false => format!(
-            "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
-            game_id,
-            role,
-            &(role == "spectator").to_string()[..],
-        ).into(),
+        structs::Games::Bf1 => match cfg.usable_client {
+            true => format!(
+                "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+                game_id,
+                role,
+                &(role == "spectator").to_string()[..],
+            ).into(),
+            false => format!(
+                "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
+                game_id,
+                role,
+                &(role == "spectator").to_string()[..],
+            ).into(),
+        },
     };
-    edit_ea_desktop(join_config);
+    edit_ea_desktop(cfg, join_config);
 
     let mut command = Command::new(cfg.game_location.clone());
     match command.spawn() {
@@ -56,76 +64,94 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
             break;
         }
 
-        not_running = !super::game::is_running().is_running;
+        not_running = !super::game::is_running(cfg).is_running;
         sleep(Duration::from_secs(5));
         timeout += 1;
     }
 
     // reset config after gamelaunch
-    edit_ea_desktop("".to_string());
+    edit_ea_desktop(cfg, "".to_string());
 
     sleep(Duration::from_secs(10));
 }
 
 pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     let mut command = Command::new(cfg.game_location.clone());
-    if cfg.usable_client {
-        command.args([
-            "-webMode",
-            "MP",
-            "-Origin_NoAppFocus",
-            "--activate-webhelper",
-            "-requestState",
-            "State_ClaimReservation",
-            "-gameId",
-            game_id,
-            "-gameMode",
-            "MP",
-            "-role",
-            role,
-            "-asSpectator",
-            &(role == "spectator").to_string()[..],
-        ]);
-    } else {
-        command.args([
-            "-Window.Fullscreen",
-            "false",
-            "-RenderDevice.MinDriverRequired",
-            "false",
-            "-Core.HardwareGpuBias",
-            "-1",
-            "-Core.HardwareCpuBias",
-            "-1",
-            "-Core.HardwareProfile",
-            "Hardware_Low",
-            "-RenderDevice.CreateMinimalWindow",
-            "true",
-            "-RenderDevice.NullDriverEnable",
-            "true",
-            "-Texture.LoadingEnabled",
-            "false",
-            "-Texture.RenderTexturesEnabled",
-            "false",
-            "-Client.TerrainEnabled",
-            "false",
-            "-Decal.SystemEnable",
-            "false",
-            "-webMode",
-            "MP",
-            "-Origin_NoAppFocus",
-            "--activate-webhelper",
-            "-requestState",
-            "State_ClaimReservation",
-            "-gameId",
-            game_id,
-            "-gameMode",
-            "MP",
-            "-role",
-            role,
-            "-asSpectator",
-            &(role == "spectator").to_string()[..],
-        ]);
-    }
+    match cfg.game {
+        structs::Games::Bf4 => {
+            command.args([
+                "-gameId",
+                &game_id[..],
+                "-gameMode",
+                "MP",
+                "-role",
+                role,
+                "-asSpectator",
+                &(role == "spectator").to_string()[..],
+                "-joinWithParty",
+                "false",
+            ]);
+        },
+        structs::Games::Bf1 => {
+            if cfg.usable_client {
+                command.args([
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "--activate-webhelper",
+                    "-requestState",
+                    "State_ClaimReservation",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            } else {
+                command.args([
+                    "-Window.Fullscreen",
+                    "false",
+                    "-RenderDevice.MinDriverRequired",
+                    "false",
+                    "-Core.HardwareGpuBias",
+                    "-1",
+                    "-Core.HardwareCpuBias",
+                    "-1",
+                    "-Core.HardwareProfile",
+                    "Hardware_Low",
+                    "-RenderDevice.CreateMinimalWindow",
+                    "true",
+                    "-RenderDevice.NullDriverEnable",
+                    "true",
+                    "-Texture.LoadingEnabled",
+                    "false",
+                    "-Texture.RenderTexturesEnabled",
+                    "false",
+                    "-Client.TerrainEnabled",
+                    "false",
+                    "-Decal.SystemEnable",
+                    "false",
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "--activate-webhelper",
+                    "-requestState",
+                    "State_ClaimReservation",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            }
+        },
+    };
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
@@ -223,7 +249,7 @@ pub fn restart_origin() {
     }
 }
 
-pub fn edit_ea_desktop(launch_settings: String) {
+pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
     if launch_settings == "".to_string() {
         log::info!("Cleaning up EA Desktop config...");
     } else {
@@ -310,13 +336,7 @@ pub fn edit_ea_desktop(launch_settings: String) {
     };
     new_conf.with_section(None::<String>).set("user.gamecommandline.origin.ofr.50.0002683", "");
     
-    let game_versions = vec![
-        "user.gamecommandline.origin.ofr.50.0000557",
-        "user.gamecommandline.origin.ofr.50.0001382",
-        "user.gamecommandline.origin.ofr.50.0001665",
-        "user.gamecommandline.origin.ofr.50.0001662"
-    ];
-
+    let game_versions = cfg.game.game_versions();
     // copy old config
     for (key, value) in old_section.iter() {
         match new_conf.section_mut(None::<String>) {

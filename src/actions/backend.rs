@@ -10,7 +10,8 @@ pub fn ping(cfg: &structs::SeederConfig, game_info: &structs::GameInfo, origin_i
             "isrunning": game_info.is_running,
             "retrycount": retry_launch.load(atomic::Ordering::Relaxed),
             "hostname": cfg.hostname,
-            "isoriginrunning": origin_info.is_running
+            "isoriginrunning": origin_info.is_running,
+            "game": cfg.game.short_name(),
         }),
     ) {
         Ok(_) => {}

@@ -17,8 +17,8 @@ use crate::structs;
 use crate::structs::GameInfo;
 use winapi::um::winuser::IsIconic;
 
-pub fn is_fullscreen() -> bool {
-    let game_info = is_running();
+pub fn is_fullscreen(cfg: &structs::SeederConfig) -> bool {
+    let game_info = is_running(cfg);
     if game_info.is_running {
         let mut rect = RECT {
             left: 0,
@@ -41,21 +41,20 @@ pub fn is_fullscreen() -> bool {
     }
 }
 
-pub fn find_game() -> String {
-    match Hive::LocalMachine.open(r"SOFTWARE\Wow6432Node\EA Games\Battlefield 1", Security::Read) {
+pub fn find_game(cfg: &structs::SeederConfig) -> String {
+    match Hive::LocalMachine.open(format!("SOFTWARE\\Wow6432Node\\EA Games\\{}", cfg.game.full_name()), Security::Read) {
         Ok(regkey) => {
             match regkey.value("Install Dir") {
-                Ok(result) => format!("{}bf1.exe", result.to_string()),
+                Ok(result) => format!("{}\\{}", result.to_string(), cfg.game.process_start()),
                 Err(_) => {
-                    log::warn!("Battlefield 1 not found in ea desktop's registry, using default origin location.");
-                    return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
+                    log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
+                    return format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start());
                 },
             }
         },
         Err(_) => {
-            
-            log::warn!("Battlefield 1 not found in ea desktop's registry, using default origin location.");
-            return "C:\\Program Files (x86)\\Origin Games\\Battlefield 1\\bf1.exe".to_string();
+            log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
+            return format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start());
         }
     }
 }
@@ -69,8 +68,8 @@ pub fn minimize(game_info: &GameInfo) {
     }
 }
 
-pub fn anti_afk() {
-    let game_info = is_running();
+pub fn anti_afk(cfg: &structs::SeederConfig) {
+    let game_info = is_running(cfg);
     if game_info.is_running {
         minimize(&game_info);
         // check minimized here??
@@ -88,8 +87,8 @@ fn make_l_param(lo_word: i32, hi_word: i32) -> i32 {
     return (hi_word << 16) | (lo_word & 0xffff);
 }
 
-pub fn send_message(to_send: &String) {
-    let game_info = is_running();
+pub fn send_message(to_send: &String, cfg: &structs::SeederConfig) {
+    let game_info = is_running(cfg);
     if game_info.is_running {
         unsafe {
             SetForegroundWindow(game_info.game_process);
@@ -113,9 +112,9 @@ pub fn send_message(to_send: &String) {
     }
 }
 
-pub fn is_running() -> structs::GameInfo {
+pub fn is_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new("Battlefield™ 1")
+        let window: Vec<u16> = OsStr::new(cfg.game.window_name())
             .encode_wide()
             .chain(once(0))
             .collect();
@@ -130,7 +129,7 @@ pub fn is_running() -> structs::GameInfo {
 
 pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
     log::info!("Quitting old session..");
-    let game_process = winproc::Process::from_name("bf1.exe");
+    let game_process = winproc::Process::from_name(cfg.game.process_name());
     match game_process {
         Ok(mut process) => match process.terminate(1) {
             Ok(_) => {
