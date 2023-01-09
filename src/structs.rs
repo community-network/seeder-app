@@ -145,8 +145,10 @@ impl Games {
     pub fn game_versions(&self) -> Vec<&'static str> {
         match self {
             Games::Bf4 => vec![
+                "user.gamecommandline.origin.ofr.50.0002683",
                 "user.gamecommandline.ofb-east:109552316",
-                "user.gamecommandline.origin.ofr.50.0002683"
+                "user.gamecommandline.ofb-east:109546867",
+                "user.gamecommandline.ofb-east:109549060"
             ],
             Games::Bf1 => vec![
                 "user.gamecommandline.origin.ofr.50.0000557",
