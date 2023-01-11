@@ -70,7 +70,7 @@ fn main() {
     };
     
     confy::store_path("config.txt", cfg.clone()).unwrap();
-    if cfg.group_id == "" {
+    if cfg.group_id.is_empty() {
         log::warn!("group_id isn't set!");
     }
 

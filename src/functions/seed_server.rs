@@ -21,13 +21,13 @@ fn multialive (
     && (old_game_id != current_game_id && &old_seeder_info.action[..] != "leaveServer") 
     || (message_running.load(atomic::Ordering::Relaxed) == 1)    
     {
-        actions::game::quit(cfg, &game_running, &retry_launch);
+        actions::game::quit(cfg, game_running, retry_launch);
         // message is not running while seeding
         message_running.store(0, atomic::Ordering::Relaxed);
     }
     if !game_info.is_running
     {
-        actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
+        actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
     }
     game_running.store(1, atomic::Ordering::Relaxed);
 }
@@ -47,26 +47,26 @@ fn on_command_changed (
     let a_minute = seeder_info.timestamp < chrono::Utc::now().timestamp() - 60; // 1 minute since last request
 
     if kp_seeder {
-        multialive(cfg, &game_info, old_seeder_info, current_game_id, old_game_id, game_running, retry_launch, message_running);
+        multialive(cfg, game_info, old_seeder_info, current_game_id, old_game_id, game_running, retry_launch, message_running);
     } else if &seeder_info.action[..] == "joinServer" {
         // remove old session when switching to fast
         if (old_game_id != current_game_id && &old_seeder_info.action[..] != "leaveServer")
         || (message_running.load(atomic::Ordering::Relaxed) == 1)
         {
-            actions::game::quit(cfg, &game_running, &retry_launch);
+            actions::game::quit(cfg, game_running, retry_launch);
             // message is not running while seeding
             message_running.store(0, atomic::Ordering::Relaxed);
         }
         // for ea desktop, only if game is not running already
         if !game_info.is_running {
-            actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
+            actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
         }
         // game state == running game
         game_running.store(1, atomic::Ordering::Relaxed);
     } else if &seeder_info.action[..] == "restartOrigin" && !a_minute {
         if game_info.is_running
         {
-            actions::game::quit(cfg, &game_running, &retry_launch);
+            actions::game::quit(cfg, game_running, retry_launch);
         }
         actions::launchers::restart_launcher(cfg);
     } else if &seeder_info.action[..] == "shutdownPC" && cfg.allow_shutdown && !a_minute {
@@ -81,9 +81,9 @@ fn on_command_changed (
         }
     } else if &seeder_info.action[..] == "broadcastMessage" && cfg.send_messages {
         log::info!("broadcasting message...");
-        actions::game::send_message(&seeder_info.game_id, cfg);
+        actions::game::send_message(seeder_info.game_id.clone(), cfg);
     } else if &seeder_info.action[..] == "leaveServer" {
-        actions::game::quit(cfg, &game_running, &retry_launch);
+        actions::game::quit(cfg, game_running, retry_launch);
         // game state == no game
     }
 }
@@ -102,7 +102,7 @@ fn on_retry (
         || kp_seeder)
     {
         log::warn!("didn't find game running, starting..");
-        actions::game::launch(cfg, current_game_id, "soldier", &game_running, &retry_launch);
+        actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
     }
     //set retries 0
     if game_info.is_running

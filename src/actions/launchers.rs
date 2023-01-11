@@ -31,20 +31,20 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
             game_id,
             role,
             &(role == "spectator").to_string()[..],
-        ).into(),
+        ),
         structs::Games::Bf1 => match cfg.usable_client {
             true => format!(
                 "-webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
                 game_id,
                 role,
                 &(role == "spectator").to_string()[..],
-            ).into(),
+            ),
             false => format!(
                 "-Window.Fullscreen false -RenderDevice.MinDriverRequired false -Core.HardwareGpuBias -1 -Core.HardwareCpuBias -1 -Core.HardwareProfile Hardware_Low -RenderDevice.CreateMinimalWindow true -RenderDevice.NullDriverEnable true -Texture.LoadingEnabled false -Texture.RenderTexturesEnabled false -Client.TerrainEnabled false -Decal.SystemEnable false -webMode MP -Origin_NoAppFocus --activate-webhelper -requestState State_ClaimReservation -gameId {} -gameMode MP -role {} -asSpectator {}",
                 game_id,
                 role,
                 &(role == "spectator").to_string()[..],
-            ).into(),
+            ),
         },
     };
     edit_ea_desktop(cfg, join_config);
@@ -81,7 +81,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
         structs::Games::Bf4 => {
             command.args([
                 "-gameId",
-                &game_id[..],
+                game_id,
                 "-gameMode",
                 "MP",
                 "-role",
@@ -250,7 +250,7 @@ pub fn restart_origin() {
 }
 
 pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
-    if launch_settings == "".to_string() {
+    if launch_settings == *"" {
         log::info!("Cleaning up EA Desktop config...");
     } else {
         log::info!("Changing EA Desktop config...");
@@ -273,52 +273,47 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         Ok(re) => re,
         Err(_) => return log::error!("Invalid REGEX for gathering EA desktop"),
     };
-    for path_result in paths {
+    for path in paths.flatten() {
+        // check filename errors
+        match path.file_name().to_str() {
+            Some(name) => {
 
-        
-        if let Ok(path) = path_result {
-            // check filename errors
-            match path.file_name().to_str() {
-                Some(name) => {
+                // get modified time in secs
+                match path.metadata() {
+                    Ok(e) => match e.modified() {
+                        Ok(e) => match e.duration_since(UNIX_EPOCH) {
+                            Ok(e) => {
+                                let timestamp = e.as_secs();
 
-                    // get modified time in secs
-                    match path.metadata() {
-                        Ok(e) => match e.modified() {
-                            Ok(e) => match e.duration_since(UNIX_EPOCH) {
-                                Ok(e) => {
-                                    let timestamp = e.as_secs();
+                                // check if newer and use only .ini files
+                                if re.is_match(name) && timestamp > newest_file.time {
 
-                                    // check if newer and use only .ini files
-                                    if re.is_match(name) && timestamp > newest_file.time {
-
-                                        // set to newest if true
-                                        match path.path().to_str() {
-                                            Some(location) => {
-                                                newest_file = structs::EaDesktopNewestFile {
-                                                    file_name: name.to_owned(),
-                                                    time: timestamp.to_owned(),
-                                                    location: location.to_owned(),
-                                                }
-                                            },
-                                            None => continue,
-                                        };
-                                    }
+                                    // set to newest if true
+                                    match path.path().to_str() {
+                                        Some(location) => {
+                                            newest_file = structs::EaDesktopNewestFile {
+                                                file_name: name.to_owned(),
+                                                time: timestamp.to_owned(),
+                                                location: location.to_owned(),
+                                            }
+                                        },
+                                        None => continue,
+                                    };
                                 }
-                                Err(_) => continue,
-                            },
+                            }
                             Err(_) => continue,
                         },
                         Err(_) => continue,
-                    };
-                },
-                None => continue,
-            };
-
-        }
+                    },
+                    Err(_) => continue,
+                };
+            },
+            None => continue,
+        };
     }
 
-    if newest_file.file_name != "" {
-        if launch_settings != "".to_string() {
+    if !newest_file.file_name.is_empty() {
+        if launch_settings != *"" {
             log::info!("Using EA Desktop config file: {}", newest_file.file_name);
         }
     } else {
@@ -351,14 +346,12 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
             None => log::error!("Failed to copy {:?}:{:?}", key, value),
         };
     }
-    match new_conf.section_mut(None::<String>) {
-        Some(conf) => {
-            for game_version in game_versions {
-                conf.insert(game_version, launch_settings.clone());
-            }
-        },
-        None => {},
-    };
+    
+    if let Some(conf) = new_conf.section_mut(None::<String>) {
+        for game_version in game_versions {
+            conf.insert(game_version, launch_settings.clone());
+        }
+    }
 
     match new_conf.write_to_file(newest_file.location) {
         Ok(_) => {},

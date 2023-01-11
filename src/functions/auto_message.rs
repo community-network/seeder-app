@@ -61,7 +61,7 @@ pub fn start(
                 match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
                     Ok(response) => match response.into_json::<structs::ServerList>() {
                         Ok(server_info) => {
-                            actions::game::launch(cfg, &server_info.servers[0].game_id, "spectator", &game_running, &retry_launch);
+                            actions::game::launch(cfg, &server_info.servers[0].game_id, "spectator", game_running, retry_launch);
                         }
                         Err(_) => log::error!("Servername not found"),
                     },

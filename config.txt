@@ -1,5 +1,5 @@
-group_id = 'eacd7a78-8887-11ed-8401-02420a00099d'
-game_location = 'D:\Program Files\Origin Games\Battlefield 4\BFLauncher_x86.exe'
+group_id = '0fda8e4c-5be3-11eb-b1da-cd4ff7dab605'
+game_location = 'C:\Program Files (x86)\Origin Games\Battlefield 1\bf1.exe'
 hostname = 'Jobse-PC'
 allow_shutdown = false
 send_messages = false
@@ -11,4 +11,4 @@ message_server_name = ''
 message_start_time_utc = '12:00'
 message_stop_time_utc = '23:00'
 message_timeout_mins = 8
-game = 'Bf4'
+game = 'Bf1'

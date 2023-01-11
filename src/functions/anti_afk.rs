@@ -19,9 +19,7 @@ pub fn start(
     // run when seeding or message
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
         let fullscreen = actions::game::is_fullscreen(cfg);
-        if fullscreen && cfg.fullscreen_anti_afk {
-            actions::game::anti_afk(cfg);
-        } else if !fullscreen {
+        if !fullscreen || (fullscreen && cfg.fullscreen_anti_afk) {
             actions::game::anti_afk(cfg);
         }
     }
@@ -30,7 +28,7 @@ pub fn start(
         if timeout >= (cfg.message_timeout_mins / 2) {
             // split message with ";" and send different one each time
             let mut message_id = current_message_id.load(atomic::Ordering::Relaxed);
-            let split = cfg.message.split(";");
+            let split = cfg.message.split(';');
 
             let current_message: Vec<&str> = split.clone().collect();
             let message: &str = current_message[message_id as usize];
@@ -38,14 +36,14 @@ pub fn start(
             // send message
             log::info!("{}", message);
             log::info!("sending message...");
-            actions::game::send_message(&message.to_string(), cfg);
+            actions::game::send_message(message.to_string(), cfg);
             message_timeout.store(0, atomic::Ordering::Relaxed);
 
             // next message in list, 0 if no new items in ";" split
             if message_id + 1 >= split.count().try_into().unwrap() {
                 message_id = 0;
             } else {
-                message_id = message_id + 1;
+                message_id += 1;
             }
 
             // save

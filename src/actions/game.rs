@@ -31,10 +31,10 @@ pub fn is_fullscreen(cfg: &structs::SeederConfig) -> bool {
         unsafe {
             GetWindowRect(game_info.game_process, game_size);
             GetWindowRect(GetDesktopWindow(), screen_size);
-            return ((*game_size).left == (*screen_size).left)
+            ((*game_size).left == (*screen_size).left)
                 && ((*game_size).right == (*screen_size).right)
                 && ((*game_size).top == (*screen_size).top)
-                && ((*game_size).bottom == (*screen_size).bottom);
+                && ((*game_size).bottom == (*screen_size).bottom)
         }
     } else {
         false
@@ -45,16 +45,16 @@ pub fn find_game(cfg: &structs::SeederConfig) -> String {
     match Hive::LocalMachine.open(format!("SOFTWARE\\Wow6432Node\\EA Games\\{}", cfg.game.full_name()), Security::Read) {
         Ok(regkey) => {
             match regkey.value("Install Dir") {
-                Ok(result) => format!("{}\\{}", result.to_string(), cfg.game.process_start()),
+                Ok(result) => format!("{}\\{}", result, cfg.game.process_start()),
                 Err(_) => {
                     log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
-                    return format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start());
+                    format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start())
                 },
             }
         },
         Err(_) => {
             log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
-            return format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start());
+            format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start())
         }
     }
 }
@@ -84,10 +84,10 @@ pub fn anti_afk(cfg: &structs::SeederConfig) {
 }
 
 fn make_l_param(lo_word: i32, hi_word: i32) -> i32 {
-    return (hi_word << 16) | (lo_word & 0xffff);
+    (hi_word << 16) | (lo_word & 0xffff)
 }
 
-pub fn send_message(to_send: &String, cfg: &structs::SeederConfig) {
+pub fn send_message(to_send: String, cfg: &structs::SeederConfig) {
     let game_info = is_running(cfg);
     if game_info.is_running {
         unsafe {
@@ -98,10 +98,7 @@ pub fn send_message(to_send: &String, cfg: &structs::SeederConfig) {
             sleep(Duration::from_millis(2000));
             let mut message: Vec<DXCode> = Vec::new();
             for char in to_send.chars() {
-                match char_to_dxcodes(char) {
-                    Some(dx) => message.push(dx),
-                    None => {}
-                }
+                if let Some(dx) = char_to_dxcodes(char) { message.push(dx) }
             }
             send_keys::send_string(message);
             sleep(Duration::from_millis(100));
