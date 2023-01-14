@@ -1,7 +1,7 @@
-use std::io::Write;
 use chrono::Local;
 use env_logger::Builder;
 use log::LevelFilter;
+use std::io::Write;
 mod actions;
 mod functions;
 mod input;
@@ -9,16 +9,17 @@ mod structs;
 
 fn main() {
     Builder::new()
-    .format(|buf, record| {
-        writeln!(buf,
-            "{} [{}] - {}",
-            Local::now().format("%Y-%m-%dT%H:%M:%S"),
-            record.level(),
-            record.args()
-        )
-    })
-    .filter(None, LevelFilter::Info)
-    .init();
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "{} [{}] - {}",
+                Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                record.level(),
+                record.args()
+            )
+        })
+        .filter(None, LevelFilter::Info)
+        .init();
 
     let mut cfg = structs::SeederConfig {
         hostname: hostname::get().unwrap().into_string().unwrap(),
@@ -35,6 +36,8 @@ fn main() {
         message_stop_time_utc: "23:00".into(),
         message_timeout_mins: 8,
         game: structs::Games::from("bf1"),
+        seeder_name: "".into(),
+        find_player_max_retries: 15,
     };
     cfg.game_location = actions::game::find_game(&cfg);
 

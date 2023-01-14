@@ -1,17 +1,17 @@
+use crate::structs;
+use directories::BaseDirs;
+use ini::Ini;
+use regex::Regex;
 use std::ffi::OsStr;
+use std::fs;
 use std::iter::once;
 use std::os::windows::prelude::OsStrExt;
 use std::process::Command;
 use std::ptr;
 use std::thread::sleep;
 use std::time::{Duration, UNIX_EPOCH};
-use std::fs;
 use winapi::shared::windef::HWND__;
 use winapi::um::winuser::FindWindowW;
-use regex::Regex;
-use ini::Ini;
-use directories::BaseDirs;
-use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     if cfg.use_ea_desktop {
@@ -57,9 +57,9 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
 
     let mut timeout = 0;
     let mut not_running = true;
-    while not_running
-    {
-        if timeout > 10 { // give up on to many tries waiting and continue anyway
+    while not_running {
+        if timeout > 10 {
+            // give up on to many tries waiting and continue anyway
             log::warn!("waiting to long, continueing..");
             break;
         }
@@ -91,7 +91,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
                 "-joinWithParty",
                 "false",
             ]);
-        },
+        }
         structs::Games::Bf1 => {
             if cfg.usable_client {
                 command.args([
@@ -150,7 +150,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
                     &(role == "spectator").to_string()[..],
                 ]);
             }
-        },
+        }
     };
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
@@ -167,10 +167,7 @@ pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
 
 pub fn is_origin_running() -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new("Origin")
-            .encode_wide()
-            .chain(once(0))
-            .collect();
+        let window: Vec<u16> = OsStr::new("Origin").encode_wide().chain(once(0)).collect();
         let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
         let no_game: *mut HWND__ = ptr::null_mut();
         structs::GameInfo {
@@ -182,10 +179,7 @@ pub fn is_origin_running() -> structs::GameInfo {
 
 pub fn is_ea_desktop_running() -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new("EA")
-            .encode_wide()
-            .chain(once(0))
-            .collect();
+        let window: Vec<u16> = OsStr::new("EA").encode_wide().chain(once(0)).collect();
         let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
         let no_game: *mut HWND__ = ptr::null_mut();
         structs::GameInfo {
@@ -215,7 +209,7 @@ pub fn stop_ea_desktop() {
                 log::info!("Closed EA Desktop");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e),
         },
         Err(_) => {
             log::info!("EA desktop not found!");
@@ -233,18 +227,17 @@ pub fn restart_origin() {
                 log::info!("Closed Origin");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => log::error!("failed to close origin (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close origin (likely permissions): {}", e),
         },
         Err(_) => {
             log::info!("origin not found!");
         }
     }
-    match command.spawn()
-    {
+    match command.spawn() {
         Ok(_) => {
             log::info!("origin launched");
             sleep(Duration::from_secs(20));
-        },
+        }
         Err(e) => log::error!("failed to launch origin: {}", e),
     }
 }
@@ -268,7 +261,11 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         Err(_) => return log::error!("EA Desktop folder not found in AppData!"),
     };
 
-    let mut newest_file = structs::EaDesktopNewestFile { time: 0, location: "".into(), file_name: "".into() };
+    let mut newest_file = structs::EaDesktopNewestFile {
+        time: 0,
+        location: "".into(),
+        file_name: "".into(),
+    };
     let re = match Regex::new(r"^user_.*.ini$") {
         Ok(re) => re,
         Err(_) => return log::error!("Invalid REGEX for gathering EA desktop"),
@@ -277,7 +274,6 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         // check filename errors
         match path.file_name().to_str() {
             Some(name) => {
-
                 // get modified time in secs
                 match path.metadata() {
                     Ok(e) => match e.modified() {
@@ -287,7 +283,6 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
 
                                 // check if newer and use only .ini files
                                 if re.is_match(name) && timestamp > newest_file.time {
-
                                     // set to newest if true
                                     match path.path().to_str() {
                                         Some(location) => {
@@ -296,7 +291,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                                                 time: timestamp.to_owned(),
                                                 location: location.to_owned(),
                                             }
-                                        },
+                                        }
                                         None => continue,
                                     };
                                 }
@@ -307,7 +302,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                     },
                     Err(_) => continue,
                 };
-            },
+            }
             None => continue,
         };
     }
@@ -329,8 +324,10 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         Some(section) => section,
         None => return log::error!("Empty EA Desktop config file!"),
     };
-    new_conf.with_section(None::<String>).set("user.gamecommandline.origin.ofr.50.0002683", "");
-    
+    new_conf
+        .with_section(None::<String>)
+        .set("user.gamecommandline.origin.ofr.50.0002683", "");
+
     let game_versions = cfg.game.game_versions();
     // copy old config
     for (key, value) in old_section.iter() {
@@ -342,11 +339,11 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                 } else {
                     conf.insert(key, value)
                 }
-            },
+            }
             None => log::error!("Failed to copy {:?}:{:?}", key, value),
         };
     }
-    
+
     if let Some(conf) = new_conf.section_mut(None::<String>) {
         for game_version in game_versions {
             conf.insert(game_version, launch_settings.clone());
@@ -354,7 +351,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
     }
 
     match new_conf.write_to_file(newest_file.location) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => log::error!("Failed to save new EA Desktop config: {}", e),
     };
 }

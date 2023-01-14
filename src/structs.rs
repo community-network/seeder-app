@@ -1,7 +1,7 @@
-use serde_derive::{Deserialize, Serialize};
-use winapi::shared::windef::HWND__;
-use std::collections::HashMap;
 use crate::actions;
+use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
+use winapi::shared::windef::HWND__;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BroadcastMessage {
@@ -26,6 +26,8 @@ pub struct SeederConfig {
     pub message_stop_time_utc: String,
     pub message_timeout_mins: u32,
     pub game: Games,
+    pub seeder_name: String,
+    pub find_player_max_retries: u32,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
@@ -68,6 +70,8 @@ impl ::std::default::Default for SeederConfig {
             message_stop_time_utc: "23:00".into(),
             message_timeout_mins: 8,
             game: Games::from("bf1"),
+            seeder_name: "".into(),
+            find_player_max_retries: 15,
         };
         cfg.game_location = actions::game::find_game(&cfg);
         cfg
@@ -85,17 +89,40 @@ pub struct ServerInfo {
     pub game_id: String,
 }
 
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsServerPlayer {
+    pub name: String,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsDetailedServer {
+    #[serde(rename = "gameId")]
+    pub game_id: String,
+    pub players: Option<Vec<GametoolsServerPlayer>>,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsTeam {
+    pub players: Vec<GametoolsServerPlayer>,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsPlayers {
+    pub teams: Vec<GametoolsTeam>,
+    pub update_timestamp: i64,
+}
+
 #[derive(Clone, Debug)]
 pub struct EaDesktopNewestFile {
     pub file_name: String,
     pub time: u64,
-    pub location: String
+    pub location: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub enum Games {
     Bf4,
-    Bf1
+    Bf1,
 }
 
 impl Games {
@@ -110,35 +137,35 @@ impl Games {
     pub fn full_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "Battlefield 4",
-            Games::Bf1 => "Battlefield 1"
+            Games::Bf1 => "Battlefield 1",
         }
     }
 
     pub fn window_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "Battlefield 4",
-            Games::Bf1 => "Battlefield™ 1"
+            Games::Bf1 => "Battlefield™ 1",
         }
     }
 
     pub fn process_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "bf4.exe",
-            Games::Bf1 => "bf1.exe"
+            Games::Bf1 => "bf1.exe",
         }
     }
 
     pub fn process_start(&self) -> &'static str {
         match self {
             Games::Bf4 => "BFLauncher_x86.exe",
-            Games::Bf1 => "bf1.exe"
+            Games::Bf1 => "bf1.exe",
         }
     }
 
     pub fn short_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "bf4",
-            Games::Bf1 => "bf1"
+            Games::Bf1 => "bf1",
         }
     }
 
@@ -148,14 +175,14 @@ impl Games {
                 "user.gamecommandline.origin.ofr.50.0002683",
                 "user.gamecommandline.ofb-east:109552316",
                 "user.gamecommandline.ofb-east:109546867",
-                "user.gamecommandline.ofb-east:109549060"
+                "user.gamecommandline.ofb-east:109549060",
             ],
             Games::Bf1 => vec![
                 "user.gamecommandline.origin.ofr.50.0000557",
                 "user.gamecommandline.origin.ofr.50.0001382",
                 "user.gamecommandline.origin.ofr.50.0001665",
-                "user.gamecommandline.origin.ofr.50.0001662"
-            ]
+                "user.gamecommandline.origin.ofr.50.0001662",
+            ],
         }
     }
 }

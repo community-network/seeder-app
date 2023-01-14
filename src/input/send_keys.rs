@@ -1,5 +1,7 @@
 use std::{mem, thread::sleep, time::Duration};
-use winapi::um::winuser::{INPUT, INPUT_KEYBOARD, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE, SendInput};
+use winapi::um::winuser::{
+    SendInput, INPUT, INPUT_KEYBOARD, KEYEVENTF_EXTENDEDKEY, KEYEVENTF_KEYUP, KEYEVENTF_SCANCODE,
+};
 
 use crate::input::chars::DXCode;
 // key codes: https://docs.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes
@@ -32,7 +34,7 @@ unsafe fn special_down(key_code: u16) {
 }
 
 unsafe fn special_up(key_code: u16) {
-    let mut input = create_input(0, key_code, KEYEVENTF_EXTENDEDKEY|KEYEVENTF_KEYUP);
+    let mut input = create_input(0, key_code, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP);
     SendInput(1, &mut input, mem::size_of::<INPUT>() as i32);
 }
 
@@ -45,7 +47,7 @@ pub unsafe fn key_enter(key_code: u16, timeout: u64) {
 pub unsafe fn send_string(keys: Vec<DXCode>) {
     for key in keys {
         match key {
-            DXCode::Shifted(code)=>{
+            DXCode::Shifted(code) => {
                 sleep(Duration::from_millis(10));
                 special_down(0x10);
                 sleep(Duration::from_millis(10));
@@ -53,7 +55,7 @@ pub unsafe fn send_string(keys: Vec<DXCode>) {
                 sleep(Duration::from_millis(10));
                 special_up(0x10);
                 sleep(Duration::from_millis(10));
-            },
+            }
             DXCode::Symbol(code) => key_enter(code, 8),
         }
     }
