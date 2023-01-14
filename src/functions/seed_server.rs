@@ -134,7 +134,7 @@ fn retry_check(
                 retry_player_check.store(0, atomic::Ordering::Relaxed);
             } else {
                 retry_player_check.fetch_add(1, atomic::Ordering::Relaxed);
-                log::info!("player not yet found, try number: {}", retries);
+                log::info!("player not yet found, try number: {}", retries + 1);
             }
         }
     }
