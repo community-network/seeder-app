@@ -219,6 +219,16 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
                 ]);
             } else {
                 command.args([
+                    "-applaunch",
+                    "1238840",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
                     "-Window.Fullscreen",
                     "false",
                     "-RenderDevice.MinDriverRequired",
@@ -241,21 +251,10 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
                     "false",
                     "-Decal.SystemEnable",
                     "false",
-                    "-applaunch",
-                    "1238840",
-                    "-gameId",
-                    game_id,
-                    "-gameMode",
-                    "MP",
-                    "-role",
-                    role,
-                    "-asSpectator",
-                    &(role == "spectator").to_string()[..],
                 ]);
             }
         },
     };
-    log::info!("{:#?}", command.get_args());
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
