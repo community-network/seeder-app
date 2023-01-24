@@ -6,6 +6,7 @@ use std::ptr;
 use std::thread::sleep;
 use std::time::{Duration, UNIX_EPOCH};
 use std::fs;
+use registry::{Security, Hive};
 use winapi::shared::windef::HWND__;
 use winapi::um::winuser::FindWindowW;
 use regex::Regex;
@@ -14,11 +15,36 @@ use directories::BaseDirs;
 use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
-    if cfg.use_ea_desktop {
-        log::info!("Launching game after EA Desktop startup...");
-        return launch_game_ea_desktop(cfg, game_id, role);
+    match cfg.launcher {
+        structs::Launchers::EADesktop => {
+            log::info!("Launching game after EA Desktop startup...");
+            launch_game_ea_desktop(cfg, game_id, role)
+        },
+        structs::Launchers::Origin => {
+            launch_game_origin(cfg, game_id, role)
+        },
+        structs::Launchers::Steam => {
+            launch_game_steam(cfg, game_id, role)
+        },
     }
-    launch_game_origin(cfg, game_id, role)
+}
+
+pub fn find_steam() -> String {
+    match Hive::LocalMachine.open("SOFTWARE\\Wow6432Node\\Valve\\Steam", Security::Read) {
+        Ok(regkey) => {
+            match regkey.value("InstallPath") {
+                Ok(result) => format!("{}\\steam.exe", result),
+                Err(_) => {
+                    log::warn!("Steam not found in registry, using default steam location.");
+                    "C:\\Program Files (x86)\\Steam\\steam.exe".to_owned()
+                },
+            }
+        },
+        Err(_) => {
+            log::warn!("Steam not found in registry, using default steam location.");
+            "C:\\Program Files (x86)\\Steam\\steam.exe".to_owned()
+        }
+    }
 }
 
 pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
@@ -158,11 +184,90 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
     }
 }
 
-pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
-    if cfg.use_ea_desktop {
-        return is_ea_desktop_running();
+pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
+    let mut command = Command::new(cfg.steam_location.clone());
+    match cfg.game {
+        structs::Games::Bf4 => {
+            command.args([
+                "-applaunch",
+                "1238860",
+                "-gameId",
+                game_id,
+                "-gameMode",
+                "MP",
+                "-role",
+                role,
+                "-asSpectator",
+                &(role == "spectator").to_string()[..],
+                "-joinWithParty",
+                "false",
+            ]);
+        },
+        structs::Games::Bf1 => {
+            if cfg.usable_client {
+                command.args([
+                    "-applaunch",
+                    "1238840",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            } else {
+                command.args([
+                    "-Window.Fullscreen",
+                    "false",
+                    "-RenderDevice.MinDriverRequired",
+                    "false",
+                    "-Core.HardwareGpuBias",
+                    "-1",
+                    "-Core.HardwareCpuBias",
+                    "-1",
+                    "-Core.HardwareProfile",
+                    "Hardware_Low",
+                    "-RenderDevice.CreateMinimalWindow",
+                    "true",
+                    "-RenderDevice.NullDriverEnable",
+                    "true",
+                    "-Texture.LoadingEnabled",
+                    "false",
+                    "-Texture.RenderTexturesEnabled",
+                    "false",
+                    "-Client.TerrainEnabled",
+                    "false",
+                    "-Decal.SystemEnable",
+                    "false",
+                    "-applaunch",
+                    "1238840",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            }
+        },
+    };
+    log::info!("{:#?}", command.get_args());
+    match command.spawn() {
+        Ok(_) => log::info!("game launched"),
+        Err(e) => log::error!("failed to launch game: {}", e),
     }
-    is_origin_running()
+}
+
+pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
+    match cfg.launcher {
+        structs::Launchers::EADesktop => is_ea_desktop_running(),
+        structs::Launchers::Origin => is_origin_running(),
+        structs::Launchers::Steam => is_ea_desktop_running(),
+    }
 }
 
 pub fn is_origin_running() -> structs::GameInfo {
@@ -196,10 +301,11 @@ pub fn is_ea_desktop_running() -> structs::GameInfo {
 }
 
 pub fn restart_launcher(cfg: &structs::SeederConfig) {
-    if cfg.use_ea_desktop {
-        return restart_ea_desktop();
+    match cfg.launcher {
+        structs::Launchers::EADesktop => restart_ea_desktop(),
+        structs::Launchers::Origin => restart_origin(),
+        structs::Launchers::Steam => restart_ea_desktop(),
     }
-    restart_origin()
 }
 
 pub fn restart_ea_desktop() {

@@ -13,19 +13,20 @@ pub struct BroadcastMessage {
 pub struct SeederConfig {
     pub group_id: String,
     pub game_location: String,
+    pub steam_location: String,
     pub hostname: String,
     pub allow_shutdown: bool,
     // when i'ts done seeding, join for messages
     pub send_messages: bool,
     pub usable_client: bool,
     pub fullscreen_anti_afk: bool,
-    pub use_ea_desktop: bool,
     pub message: String,
     pub message_server_name: String,
     pub message_start_time_utc: String,
     pub message_stop_time_utc: String,
     pub message_timeout_mins: u32,
     pub game: Games,
+    pub launcher: Launchers,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
@@ -57,19 +58,21 @@ impl ::std::default::Default for SeederConfig {
             hostname: hostname::get().unwrap().into_string().unwrap(),
             group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
             game_location: "".into(),
+            steam_location: "".into(),
             allow_shutdown: false,
             send_messages: false,
             usable_client: true,
             fullscreen_anti_afk: true,
-            use_ea_desktop: true,
             message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
             message_server_name: "[BoB]#1 EU".into(),
             message_start_time_utc: "12:00".into(),
             message_stop_time_utc: "23:00".into(),
             message_timeout_mins: 8,
             game: Games::from("bf1"),
+            launcher: Launchers::from("ea_desktop")
         };
         cfg.game_location = actions::game::find_game(&cfg);
+        cfg.steam_location = actions::launchers::find_steam();
         cfg
     }
 }
@@ -90,6 +93,24 @@ pub struct EaDesktopNewestFile {
     pub file_name: String,
     pub time: u64,
     pub location: String
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub enum Launchers {
+    EADesktop,
+    Origin,
+    Steam
+}
+
+impl Launchers {
+    pub fn from(input: &str) -> Launchers {
+        match input {
+            "ea_desktop" => Launchers::EADesktop,
+            "origin" => Launchers::Origin,
+            "steam" => Launchers::Steam,
+            _ => Launchers::EADesktop,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]

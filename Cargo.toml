@@ -37,3 +37,7 @@ path = "src/origin_test.rs"
 [[bin]]
 name = "ea_desktop_test"
 path = "src/ea_desktop_test.rs"
+
+[[bin]]
+name = "steam_test"
+path = "src/steam_test.rs"

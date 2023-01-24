@@ -35,10 +35,10 @@ fn main() {
         message_stop_time_utc: "23:00".into(),
         message_timeout_mins: 8,
         game: structs::Games::from("bf1"),
-        launcher: structs::Launchers::from("ea_desktop")
+        launcher: structs::Launchers::from("steam")
     };
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.steam_location = actions::launchers::find_steam();
 
-    actions::launchers::launch_game_ea_desktop(&cfg, "7821536030132", "soldier");
+    actions::launchers::launch_game_origin(&cfg, "8189927460830", "soldier");
 }
