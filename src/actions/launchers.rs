@@ -204,61 +204,26 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
             ]);
         },
         structs::Games::Bf1 => {
-            if cfg.usable_client {
-                command.args([
-                    "-applaunch",
-                    "1238840",
-                    "-gameId",
-                    game_id,
-                    "-gameMode",
-                    "MP",
-                    "-role",
-                    role,
-                    "-asSpectator",
-                    &(role == "spectator").to_string()[..],
-                ]);
-            } else {
-                command.args([
-                    "-applaunch",
-                    "1238840",
-                    "-gameId",
-                    game_id,
-                    "-gameMode",
-                    "MP",
-                    "-role",
-                    role,
-                    "-asSpectator",
-                    &(role == "spectator").to_string()[..],
-                    "-Window.Fullscreen",
-                    "false",
-                    "-RenderDevice.MinDriverRequired",
-                    "false",
-                    "-Core.HardwareGpuBias",
-                    "-1",
-                    "-Core.HardwareCpuBias",
-                    "-1",
-                    "-Core.HardwareProfile",
-                    "Hardware_Low",
-                    "-RenderDevice.CreateMinimalWindow",
-                    "true",
-                    "-RenderDevice.NullDriverEnable",
-                    "true",
-                    "-Texture.LoadingEnabled",
-                    "false",
-                    "-Texture.RenderTexturesEnabled",
-                    "false",
-                    "-Client.TerrainEnabled",
-                    "false",
-                    "-Decal.SystemEnable",
-                    "false",
-                ]);
-            }
+            command.args([
+                "-applaunch",
+                "1238840",
+                "-gameId",
+                game_id,
+                "-gameMode",
+                "MP",
+                "-role",
+                role,
+                "-asSpectator",
+                &(role == "spectator").to_string()[..],
+            ]);
         },
     };
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
     }
+    // bit slower than origin version
+    sleep(Duration::from_secs(10));
 }
 
 pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
