@@ -1,31 +1,31 @@
+use chrono::Local;
+use env_logger::Builder;
+use log::LevelFilter;
+use std::collections::HashMap;
+use std::io::Write;
 use std::{
     sync::{atomic, Arc},
     thread::{self, sleep},
     time::Duration,
 };
-use std::io::Write;
-use chrono::Local;
-use env_logger::Builder;
-use log::LevelFilter;
-use std::collections::HashMap;
 mod actions;
 mod functions;
 mod input;
 mod structs;
 
-
 fn main() {
     Builder::new()
-    .format(|buf, record| {
-        writeln!(buf,
-            "{} [{}] - {}",
-            Local::now().format("%Y-%m-%dT%H:%M:%S"),
-            record.level(),
-            record.args()
-        )
-    })
-    .filter(None, LevelFilter::Info)
-    .init();
+        .format(|buf, record| {
+            writeln!(
+                buf,
+                "{} [{}] - {}",
+                Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                record.level(),
+                record.args()
+            )
+        })
+        .filter(None, LevelFilter::Info)
+        .init();
 
     // game_running based on api, 0 == leaving servers. 1 means joining servers.
     let game_running = Arc::new(atomic::AtomicU32::new(0));
@@ -52,7 +52,7 @@ fn main() {
                 hostname: hostname::get().unwrap().into_string().unwrap(),
                 group_id: "".into(),
                 game_location: "".into(),
-                steam_location: "".into(),
+                link2ea_location: "".into(),
                 allow_shutdown: false,
                 send_messages: false,
                 usable_client: true,
@@ -63,14 +63,14 @@ fn main() {
                 message_stop_time_utc: "23:00".into(),
                 message_timeout_mins: 8,
                 game: structs::Games::from("bf1"),
-                launcher: structs::Launchers::from("ea_desktop")
+                launcher: structs::Launchers::from("ea_desktop"),
             };
             cfg.game_location = actions::game::find_game(&cfg);
-            cfg.steam_location = actions::launchers::find_steam();
+            cfg.link2ea_location = actions::launchers::find_link2ea();
             cfg
         }
     };
-    
+
     confy::store_path("config.txt", cfg.clone()).unwrap();
     if cfg.group_id.is_empty() {
         log::warn!("group_id isn't set!");
@@ -84,7 +84,7 @@ fn main() {
             &game_running_clone_anti_afk,
             &message_running_clone_anti_afk,
             &message_timeout,
-            &current_message_id
+            &current_message_id,
         )
     });
 
@@ -116,7 +116,10 @@ fn main() {
     );
     log::info!("firing of latest request found (default on startup script)");
     loop {
-        match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
+        match ureq::get(&connect_addr[..])
+            .timeout(Duration::new(10, 0))
+            .call()
+        {
             Ok(response) => match response.into_json::<structs::CurrentServer>() {
                 Ok(seeder_info) => {
                     functions::seed_server::start(

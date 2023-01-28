@@ -1,21 +1,25 @@
+use crate::actions::launchers;
+use crate::input::{
+    chars::{char_to_dxcodes, DXCode},
+    send_keys,
+};
+use crate::structs;
+use crate::structs::GameInfo;
+use registry::{Hive, Security};
 use std::ffi::OsStr;
 use std::iter::once;
 use std::os::windows::prelude::OsStrExt;
 use std::ptr;
+use std::sync::atomic::AtomicU32;
+use std::sync::{atomic, Arc};
 use std::thread::sleep;
 use std::time::Duration;
-use std::sync::{atomic, Arc};
-use std::sync::atomic::AtomicU32;
-use registry::{Hive, Security};
 use winapi::shared::windef::{HWND__, LPRECT, RECT};
-use winapi::um::winuser::{
-    FindWindowW, GetDesktopWindow, GetWindowRect, SetForegroundWindow, ShowWindow, GetForegroundWindow, SendMessageW
-};
-use crate::actions::launchers;
-use crate::input::{chars::{char_to_dxcodes, DXCode}, send_keys};
-use crate::structs;
-use crate::structs::GameInfo;
 use winapi::um::winuser::IsIconic;
+use winapi::um::winuser::{
+    FindWindowW, GetDesktopWindow, GetForegroundWindow, GetWindowRect, SendMessageW,
+    SetForegroundWindow, ShowWindow,
+};
 
 pub fn is_fullscreen(cfg: &structs::SeederConfig) -> bool {
     let game_info = is_running(cfg);
@@ -42,19 +46,34 @@ pub fn is_fullscreen(cfg: &structs::SeederConfig) -> bool {
 }
 
 pub fn find_game(cfg: &structs::SeederConfig) -> String {
-    match Hive::LocalMachine.open(format!("SOFTWARE\\Wow6432Node\\EA Games\\{}", cfg.game.full_name()), Security::Read) {
-        Ok(regkey) => {
-            match regkey.value("Install Dir") {
-                Ok(result) => format!("{}\\{}", result, cfg.game.process_start()),
-                Err(_) => {
-                    log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
-                    format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start())
-                },
+    match Hive::LocalMachine.open(
+        format!("SOFTWARE\\Wow6432Node\\EA Games\\{}", cfg.game.full_name()),
+        Security::Read,
+    ) {
+        Ok(regkey) => match regkey.value("Install Dir") {
+            Ok(result) => format!("{}\\{}", result, cfg.game.process_start()),
+            Err(_) => {
+                log::warn!(
+                    "{} not found in ea desktop's registry, using default origin location.",
+                    cfg.game.full_name()
+                );
+                format!(
+                    "C:\\Program Files (x86)\\Origin Games\\{}\\{}",
+                    cfg.game.full_name(),
+                    cfg.game.process_start()
+                )
             }
         },
         Err(_) => {
-            log::warn!("{} not found in ea desktop's registry, using default origin location.", cfg.game.full_name());
-            format!("C:\\Program Files (x86)\\Origin Games\\{}\\{}", cfg.game.full_name(), cfg.game.process_start())
+            log::warn!(
+                "{} not found in ea desktop's registry, using default origin location.",
+                cfg.game.full_name()
+            );
+            format!(
+                "C:\\Program Files (x86)\\Origin Games\\{}\\{}",
+                cfg.game.full_name(),
+                cfg.game.process_start()
+            )
         }
     }
 }
@@ -98,7 +117,9 @@ pub fn send_message(to_send: String, cfg: &structs::SeederConfig) {
             sleep(Duration::from_millis(2000));
             let mut message: Vec<DXCode> = Vec::new();
             for char in to_send.chars() {
-                if let Some(dx) = char_to_dxcodes(char) { message.push(dx) }
+                if let Some(dx) = char_to_dxcodes(char) {
+                    message.push(dx)
+                }
             }
             send_keys::send_string(message);
             sleep(Duration::from_millis(100));
@@ -124,7 +145,11 @@ pub fn is_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
     }
 }
 
-pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
+pub fn quit(
+    cfg: &structs::SeederConfig,
+    game_running: &Arc<AtomicU32>,
+    retry_launch: &Arc<AtomicU32>,
+) {
     log::info!("Quitting old session..");
     let game_process = winproc::Process::from_name(cfg.game.process_name());
     match game_process {
@@ -156,8 +181,13 @@ pub fn quit(cfg: &structs::SeederConfig, game_running: &Arc<AtomicU32>, retry_la
     }
 }
 
-pub fn launch(cfg: &structs::SeederConfig, game_id: &str, role: &str, 
-    game_running: &Arc<AtomicU32>, retry_launch: &Arc<AtomicU32>) {
+pub fn launch(
+    cfg: &structs::SeederConfig,
+    game_id: &str,
+    role: &str,
+    game_running: &Arc<AtomicU32>,
+    retry_launch: &Arc<AtomicU32>,
+) {
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
         // if it tried to launch but failed twice
         if retry_launch.load(atomic::Ordering::Relaxed) == 10 {

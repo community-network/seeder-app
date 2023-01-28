@@ -1,7 +1,7 @@
-use serde_derive::{Deserialize, Serialize};
-use winapi::shared::windef::HWND__;
-use std::collections::HashMap;
 use crate::actions;
+use serde_derive::{Deserialize, Serialize};
+use std::collections::HashMap;
+use winapi::shared::windef::HWND__;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BroadcastMessage {
@@ -13,7 +13,7 @@ pub struct BroadcastMessage {
 pub struct SeederConfig {
     pub group_id: String,
     pub game_location: String,
-    pub steam_location: String,
+    pub link2ea_location: String,
     pub hostname: String,
     pub allow_shutdown: bool,
     // when i'ts done seeding, join for messages
@@ -58,7 +58,7 @@ impl ::std::default::Default for SeederConfig {
             hostname: hostname::get().unwrap().into_string().unwrap(),
             group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
             game_location: "".into(),
-            steam_location: "".into(),
+            link2ea_location: "".into(),
             allow_shutdown: false,
             send_messages: false,
             usable_client: true,
@@ -69,10 +69,10 @@ impl ::std::default::Default for SeederConfig {
             message_stop_time_utc: "23:00".into(),
             message_timeout_mins: 8,
             game: Games::from("bf1"),
-            launcher: Launchers::from("ea_desktop")
+            launcher: Launchers::from("ea_desktop"),
         };
         cfg.game_location = actions::game::find_game(&cfg);
-        cfg.steam_location = actions::launchers::find_steam();
+        cfg.link2ea_location = actions::launchers::find_link2ea();
         cfg
     }
 }
@@ -92,14 +92,14 @@ pub struct ServerInfo {
 pub struct EaDesktopNewestFile {
     pub file_name: String,
     pub time: u64,
-    pub location: String
+    pub location: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
 pub enum Launchers {
     EADesktop,
     Origin,
-    Steam
+    Steam,
 }
 
 impl Launchers {
@@ -111,12 +111,20 @@ impl Launchers {
             _ => Launchers::EADesktop,
         }
     }
+
+    pub fn window_name(&self) -> &'static str {
+        match self {
+            Launchers::EADesktop => "EA",
+            Launchers::Origin => "Origin",
+            Launchers::Steam => "Steam",
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub enum Games {
     Bf4,
-    Bf1
+    Bf1,
 }
 
 impl Games {
@@ -131,35 +139,35 @@ impl Games {
     pub fn full_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "Battlefield 4",
-            Games::Bf1 => "Battlefield 1"
+            Games::Bf1 => "Battlefield 1",
         }
     }
 
     pub fn window_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "Battlefield 4",
-            Games::Bf1 => "Battlefield™ 1"
+            Games::Bf1 => "Battlefield™ 1",
         }
     }
 
     pub fn process_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "bf4.exe",
-            Games::Bf1 => "bf1.exe"
+            Games::Bf1 => "bf1.exe",
         }
     }
 
     pub fn process_start(&self) -> &'static str {
         match self {
             Games::Bf4 => "BFLauncher_x86.exe",
-            Games::Bf1 => "bf1.exe"
+            Games::Bf1 => "bf1.exe",
         }
     }
 
     pub fn short_name(&self) -> &'static str {
         match self {
             Games::Bf4 => "bf4",
-            Games::Bf1 => "bf1"
+            Games::Bf1 => "bf1",
         }
     }
 
@@ -169,14 +177,14 @@ impl Games {
                 "user.gamecommandline.origin.ofr.50.0002683",
                 "user.gamecommandline.ofb-east:109552316",
                 "user.gamecommandline.ofb-east:109546867",
-                "user.gamecommandline.ofb-east:109549060"
+                "user.gamecommandline.ofb-east:109549060",
             ],
             Games::Bf1 => vec![
                 "user.gamecommandline.origin.ofr.50.0000557",
                 "user.gamecommandline.origin.ofr.50.0001382",
                 "user.gamecommandline.origin.ofr.50.0001665",
-                "user.gamecommandline.origin.ofr.50.0001662"
-            ]
+                "user.gamecommandline.origin.ofr.50.0001662",
+            ],
         }
     }
 }

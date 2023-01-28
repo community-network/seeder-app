@@ -58,10 +58,19 @@ pub fn start(
                     "https://api.gametools.network/{}/servers/?name={}&region=all&platform=pc&limit=1&lang=en-us",
                     cfg.game.short_name() ,encode(&cfg.message_server_name[..])
                 );
-                match ureq::get(&connect_addr[..]).timeout(Duration::new(10, 0)).call() {
+                match ureq::get(&connect_addr[..])
+                    .timeout(Duration::new(10, 0))
+                    .call()
+                {
                     Ok(response) => match response.into_json::<structs::ServerList>() {
                         Ok(server_info) => {
-                            actions::game::launch(cfg, &server_info.servers[0].game_id, "spectator", game_running, retry_launch);
+                            actions::game::launch(
+                                cfg,
+                                &server_info.servers[0].game_id,
+                                "spectator",
+                                game_running,
+                                retry_launch,
+                            );
                         }
                         Err(_) => log::error!("Servername not found"),
                     },

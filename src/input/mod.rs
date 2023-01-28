@@ -1,2 +1,2 @@
-pub mod send_keys;
 pub mod chars;
+pub mod send_keys;

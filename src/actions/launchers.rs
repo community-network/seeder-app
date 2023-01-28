@@ -1,48 +1,45 @@
+use crate::structs;
+use directories::BaseDirs;
+use ini::Ini;
+use regex::Regex;
+use registry::{Hive, Security};
 use std::ffi::OsStr;
+use std::fs;
 use std::iter::once;
 use std::os::windows::prelude::OsStrExt;
 use std::process::Command;
 use std::ptr;
 use std::thread::sleep;
 use std::time::{Duration, UNIX_EPOCH};
-use std::fs;
-use registry::{Security, Hive};
 use winapi::shared::windef::HWND__;
 use winapi::um::winuser::FindWindowW;
-use regex::Regex;
-use ini::Ini;
-use directories::BaseDirs;
-use crate::structs;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     match cfg.launcher {
         structs::Launchers::EADesktop => {
             log::info!("Launching game after EA Desktop startup...");
             launch_game_ea_desktop(cfg, game_id, role)
-        },
-        structs::Launchers::Origin => {
-            launch_game_origin(cfg, game_id, role)
-        },
-        structs::Launchers::Steam => {
-            launch_game_steam(cfg, game_id, role)
-        },
+        }
+        structs::Launchers::Origin => launch_game_origin(cfg, game_id, role),
+        structs::Launchers::Steam => launch_game_steam(cfg, game_id, role),
     }
 }
 
-pub fn find_steam() -> String {
-    match Hive::LocalMachine.open("SOFTWARE\\Wow6432Node\\Valve\\Steam", Security::Read) {
-        Ok(regkey) => {
-            match regkey.value("InstallPath") {
-                Ok(result) => format!("{}\\steam.exe", result),
-                Err(_) => {
-                    log::warn!("Steam not found in registry, using default steam location.");
-                    "C:\\Program Files (x86)\\Steam\\steam.exe".to_owned()
-                },
+pub fn find_link2ea() -> String {
+    match Hive::LocalMachine.open(
+        "SOFTWARE\\Wow6432Node\\Electronic Arts\\EA Desktop",
+        Security::Read,
+    ) {
+        Ok(regkey) => match regkey.value("ClientPath") {
+            Ok(result) => result.to_string().replace("EADesktop.exe", "Link2EA.exe"),
+            Err(_) => {
+                log::warn!("Link2EA.exe not found in registry, using default Link2EA location.");
+                "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\Link2EA.exe".to_owned()
             }
         },
         Err(_) => {
-            log::warn!("Steam not found in registry, using default steam location.");
-            "C:\\Program Files (x86)\\Steam\\steam.exe".to_owned()
+            log::warn!("Link2EA.exe not found in registry, using default Link2EA location.");
+            "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\Link2EA.exe".to_owned()
         }
     }
 }
@@ -83,9 +80,9 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
 
     let mut timeout = 0;
     let mut not_running = true;
-    while not_running
-    {
-        if timeout > 10 { // give up on to many tries waiting and continue anyway
+    while not_running {
+        if timeout > 10 {
+            // give up on to many tries waiting and continue anyway
             log::warn!("waiting to long, continueing..");
             break;
         }
@@ -117,7 +114,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
                 "-joinWithParty",
                 "false",
             ]);
-        },
+        }
         structs::Games::Bf1 => {
             if cfg.usable_client {
                 command.args([
@@ -176,7 +173,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
                     &(role == "spectator").to_string()[..],
                 ]);
             }
-        },
+        }
     };
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
@@ -185,7 +182,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
 }
 
 pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
-    let mut command = Command::new(cfg.steam_location.clone());
+    let mut command = Command::new(cfg.link2ea_location.clone());
     match cfg.game {
         structs::Games::Bf4 => {
             command.args([
@@ -202,21 +199,61 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
                 "-joinWithParty",
                 "false",
             ]);
-        },
+        }
         structs::Games::Bf1 => {
-            command.args([
-                "-applaunch",
-                "1238840",
-                "-gameId",
-                game_id,
-                "-gameMode",
-                "MP",
-                "-role",
-                role,
-                "-asSpectator",
-                &(role == "spectator").to_string()[..],
-            ]);
-        },
+            if cfg.usable_client {
+                command.args([
+                    "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            } else {
+                command.args([
+                    "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-Window.Fullscreen",
+                    "false",
+                    "-RenderDevice.MinDriverRequired",
+                    "false",
+                    "-Core.HardwareGpuBias",
+                    "-1",
+                    "-Core.HardwareCpuBias",
+                    "-1",
+                    "-Core.HardwareProfile",
+                    "Hardware_Low",
+                    "-RenderDevice.CreateMinimalWindow",
+                    "true",
+                    "-RenderDevice.NullDriverEnable",
+                    "true",
+                    "-Texture.LoadingEnabled",
+                    "false",
+                    "-Texture.RenderTexturesEnabled",
+                    "false",
+                    "-Client.TerrainEnabled",
+                    "false",
+                    "-Decal.SystemEnable",
+                    "false",
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "-requestState",
+                    "State_ClaimReservation",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            }
+        }
     };
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
@@ -227,31 +264,8 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
 }
 
 pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
-    match cfg.launcher {
-        structs::Launchers::EADesktop => is_ea_desktop_running(),
-        structs::Launchers::Origin => is_origin_running(),
-        structs::Launchers::Steam => is_ea_desktop_running(),
-    }
-}
-
-pub fn is_origin_running() -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new("Origin")
-            .encode_wide()
-            .chain(once(0))
-            .collect();
-        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
-        let no_game: *mut HWND__ = ptr::null_mut();
-        structs::GameInfo {
-            is_running: window_handle != no_game,
-            game_process: window_handle,
-        }
-    }
-}
-
-pub fn is_ea_desktop_running() -> structs::GameInfo {
-    unsafe {
-        let window: Vec<u16> = OsStr::new("EA")
+        let window: Vec<u16> = OsStr::new(cfg.launcher.window_name())
             .encode_wide()
             .chain(once(0))
             .collect();
@@ -285,7 +299,7 @@ pub fn stop_ea_desktop() {
                 log::info!("Closed EA Desktop");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e),
         },
         Err(_) => {
             log::info!("EA desktop not found!");
@@ -303,18 +317,17 @@ pub fn restart_origin() {
                 log::info!("Closed Origin");
                 sleep(Duration::from_secs(10));
             }
-            Err(e) => log::error!("failed to close origin (likely permissions): {}", e)
+            Err(e) => log::error!("failed to close origin (likely permissions): {}", e),
         },
         Err(_) => {
             log::info!("origin not found!");
         }
     }
-    match command.spawn()
-    {
+    match command.spawn() {
         Ok(_) => {
             log::info!("origin launched");
             sleep(Duration::from_secs(20));
-        },
+        }
         Err(e) => log::error!("failed to launch origin: {}", e),
     }
 }
@@ -338,7 +351,11 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         Err(_) => return log::error!("EA Desktop folder not found in AppData!"),
     };
 
-    let mut newest_file = structs::EaDesktopNewestFile { time: 0, location: "".into(), file_name: "".into() };
+    let mut newest_file = structs::EaDesktopNewestFile {
+        time: 0,
+        location: "".into(),
+        file_name: "".into(),
+    };
     let re = match Regex::new(r"^user_.*.ini$") {
         Ok(re) => re,
         Err(_) => return log::error!("Invalid REGEX for gathering EA desktop"),
@@ -347,7 +364,6 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         // check filename errors
         match path.file_name().to_str() {
             Some(name) => {
-
                 // get modified time in secs
                 match path.metadata() {
                     Ok(e) => match e.modified() {
@@ -357,7 +373,6 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
 
                                 // check if newer and use only .ini files
                                 if re.is_match(name) && timestamp > newest_file.time {
-
                                     // set to newest if true
                                     match path.path().to_str() {
                                         Some(location) => {
@@ -366,7 +381,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                                                 time: timestamp.to_owned(),
                                                 location: location.to_owned(),
                                             }
-                                        },
+                                        }
                                         None => continue,
                                     };
                                 }
@@ -377,7 +392,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                     },
                     Err(_) => continue,
                 };
-            },
+            }
             None => continue,
         };
     }
@@ -399,8 +414,10 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
         Some(section) => section,
         None => return log::error!("Empty EA Desktop config file!"),
     };
-    new_conf.with_section(None::<String>).set("user.gamecommandline.origin.ofr.50.0002683", "");
-    
+    new_conf
+        .with_section(None::<String>)
+        .set("user.gamecommandline.origin.ofr.50.0002683", "");
+
     let game_versions = cfg.game.game_versions();
     // copy old config
     for (key, value) in old_section.iter() {
@@ -412,11 +429,11 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
                 } else {
                     conf.insert(key, value)
                 }
-            },
+            }
             None => log::error!("Failed to copy {:?}:{:?}", key, value),
         };
     }
-    
+
     if let Some(conf) = new_conf.section_mut(None::<String>) {
         for game_version in game_versions {
             conf.insert(game_version, launch_settings.clone());
@@ -424,7 +441,7 @@ pub fn edit_ea_desktop(cfg: &structs::SeederConfig, launch_settings: String) {
     }
 
     match new_conf.write_to_file(newest_file.location) {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => log::error!("Failed to save new EA Desktop config: {}", e),
     };
 }
