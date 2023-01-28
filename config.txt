@@ -1,0 +1,15 @@
+group_id = 'aac4c3fa-8a72-11ec-80d7-0a58a9feac02'
+game_location = 'D:\Programs\Steam\steamapps\common\Battlefield 1\\bf1.exe'
+link2ea_location = 'C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\Link2EA.exe'
+hostname = 'DESKTOP-3J0QAT3'
+allow_shutdown = false
+send_messages = false
+usable_client = true
+fullscreen_anti_afk = true
+message = 'Join our discord, we are recruiting: ...'
+message_server_name = ''
+message_start_time_utc = '12:00'
+message_stop_time_utc = '23:00'
+message_timeout_mins = 8
+game = 'Bf1'
+launcher = 'Steam'
