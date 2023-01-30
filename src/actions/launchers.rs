@@ -186,8 +186,7 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
     match cfg.game {
         structs::Games::Bf4 => {
             command.args([
-                "-applaunch",
-                "1238860",
+                "link2ea://launchgame/1238860?platform=steam&theme=bf4",
                 "-gameId",
                 game_id,
                 "-gameMode",

@@ -41,5 +41,5 @@ fn main() {
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.link2ea_location = actions::launchers::find_link2ea();
 
-    actions::launchers::launch_game_origin(&cfg, "8189927460830", "soldier");
+    actions::launchers::launch_game_steam(&cfg, "8189927460830", "soldier");
 }
