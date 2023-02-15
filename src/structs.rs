@@ -56,7 +56,7 @@ impl ::std::default::Default for SeederConfig {
     fn default() -> Self {
         let mut cfg = Self {
             hostname: hostname::get().unwrap().into_string().unwrap(),
-            group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
+            group_id: "".into(),
             game_location: "".into(),
             link2ea_location: "".into(),
             allow_shutdown: false,
