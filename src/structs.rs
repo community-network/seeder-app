@@ -26,6 +26,8 @@ pub struct SeederConfig {
     pub message_stop_time_utc: String,
     pub message_timeout_mins: u32,
     pub game: Games,
+    pub seeder_name: String,
+    pub find_player_max_retries: u32,
     pub launcher: Launchers,
 }
 
@@ -69,6 +71,8 @@ impl ::std::default::Default for SeederConfig {
             message_stop_time_utc: "23:00".into(),
             message_timeout_mins: 8,
             game: Games::from("bf1"),
+            seeder_name: "".into(),
+            find_player_max_retries: 15,
             launcher: Launchers::from("ea_desktop"),
         };
         cfg.game_location = actions::game::find_game(&cfg);
@@ -86,6 +90,29 @@ pub struct ServerList {
 pub struct ServerInfo {
     #[serde(rename = "gameId")]
     pub game_id: String,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsServerPlayer {
+    pub name: String,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsDetailedServer {
+    #[serde(rename = "gameId")]
+    pub game_id: String,
+    pub players: Option<Vec<GametoolsServerPlayer>>,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsTeam {
+    pub players: Vec<GametoolsServerPlayer>,
+}
+
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct GametoolsPlayers {
+    pub teams: Vec<GametoolsTeam>,
+    pub update_timestamp: i64,
 }
 
 #[derive(Clone, Debug)]
@@ -121,7 +148,7 @@ impl Launchers {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
 pub enum Games {
     Bf4,
     Bf1,

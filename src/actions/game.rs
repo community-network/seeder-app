@@ -190,7 +190,7 @@ pub fn launch(
 ) {
     if game_running.load(atomic::Ordering::Relaxed) == 1 {
         // if it tried to launch but failed twice
-        if retry_launch.load(atomic::Ordering::Relaxed) == 10 {
+        if retry_launch.load(atomic::Ordering::Relaxed) >= 10 {
             launchers::restart_launcher(cfg);
             // make retries 0
             retry_launch.store(0, atomic::Ordering::Relaxed);

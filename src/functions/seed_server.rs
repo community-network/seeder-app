@@ -95,7 +95,7 @@ fn on_command_changed(
     }
 }
 
-fn on_retry(
+fn retry_check(
     cfg: &structs::SeederConfig,
     kp_seeder: bool,
     game_info: &structs::GameInfo,
@@ -103,16 +103,41 @@ fn on_retry(
     current_game_id: &str,
     game_running: &Arc<AtomicU32>,
     retry_launch: &Arc<AtomicU32>,
+    retry_player_check: &Arc<AtomicU32>,
 ) {
+    // if game isnt running but should: retry
     if !&game_info.is_running
-        & ((&seeder_info.action[..] == "joinServer" && seeder_info.rejoin) || kp_seeder)
+        && ((&seeder_info.action[..] == "joinServer" && seeder_info.rejoin) || kp_seeder)
     {
         log::warn!("didn't find game running, starting..");
         actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
     }
+    // if game is running, check if in right server if option set
     //set retries 0
     if game_info.is_running {
         retry_launch.store(0, atomic::Ordering::Relaxed);
+
+        // check if player is in server
+        if !cfg.seeder_name.is_empty() {
+            let retries = retry_player_check.load(atomic::Ordering::Relaxed);
+            if actions::backend::has_player(cfg, current_game_id) {
+                if retries > 0 {
+                    log::info!("player found");
+                }
+                retry_player_check.store(0, atomic::Ordering::Relaxed)
+            } else if retries >= cfg.find_player_max_retries {
+                log::error!(
+                    "player is still not in the server after {} retries",
+                    retries
+                );
+                actions::game::quit(cfg, game_running, retry_launch);
+                actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
+                retry_player_check.store(0, atomic::Ordering::Relaxed);
+            } else {
+                retry_player_check.fetch_add(1, atomic::Ordering::Relaxed);
+                log::info!("player not yet found, try number: {}", retries + 1);
+            }
+        }
     }
 }
 
@@ -123,6 +148,7 @@ pub fn start(
     game_running: &Arc<AtomicU32>,
     retry_launch: &Arc<AtomicU32>,
     message_running: &Arc<AtomicU32>,
+    retry_player_check: &Arc<AtomicU32>,
 ) {
     let game_info = actions::game::is_running(cfg);
     let a_hour = seeder_info.timestamp < chrono::Utc::now().timestamp() - 3600; // 1 hour since last request
@@ -159,9 +185,9 @@ pub fn start(
     // request to old to work with
     } else if seeder_info.timestamp != old_seeder_info.timestamp && a_hour {
         log::info!("request older than a hour, not running latest request.")
-    // retry if game isnt running
+    // if no new action
     } else {
-        on_retry(
+        retry_check(
             cfg,
             kp_seeder,
             &game_info,
@@ -169,6 +195,7 @@ pub fn start(
             current_game_id,
             game_running,
             retry_launch,
+            retry_player_check,
         );
     }
 

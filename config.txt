@@ -12,4 +12,6 @@ message_start_time_utc = '12:00'
 message_stop_time_utc = '23:00'
 message_timeout_mins = 8
 game = 'Bf1'
+seeder_name = 'iiTzArcur'
+find_player_max_retries = 10
 launcher = 'EADesktop'

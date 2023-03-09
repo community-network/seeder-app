@@ -42,6 +42,7 @@ fn main() {
 
     let retry_launch = Arc::new(atomic::AtomicU32::new(0));
     let retry_launch_clone_message = Arc::clone(&retry_launch);
+    let retry_player_check = Arc::new(atomic::AtomicU32::new(0));
     // get/set config
     let cfg: structs::SeederConfig = match confy::load_path("config.txt") {
         Ok(config) => config,
@@ -63,6 +64,8 @@ fn main() {
                 message_stop_time_utc: "23:00".into(),
                 message_timeout_mins: 8,
                 game: structs::Games::from("bf1"),
+                seeder_name: "".into(),
+                find_player_max_retries: 15,
                 launcher: structs::Launchers::from("ea_desktop"),
             };
             cfg.game_location = actions::game::find_game(&cfg);
@@ -129,6 +132,7 @@ fn main() {
                         &game_running,
                         &retry_launch,
                         &message_running_clone,
+                        &retry_player_check,
                     );
                 }
                 Err(e) => {
