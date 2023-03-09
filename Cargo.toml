@@ -15,10 +15,10 @@ serde_derive = "1.0.152"
 confy = "0.5.1"
 winproc = "0.6.4"
 winapi = { version = "0.3.9", features = ["winuser"] }
-ureq = { version = "2.6.1", features = ["json"] }
+ureq = { version = "2.6.2", features = ["json"] }
 chrono = "*"
 hostname = "^0.3"
-system_shutdown = "4.0.0"
+system_shutdown = "4.0.1"
 urlencoding = "2.1.2"
 directories = "4.0"
 regex = "1"
@@ -37,3 +37,7 @@ path = "src/origin_test.rs"
 [[bin]]
 name = "ea_desktop_test"
 path = "src/ea_desktop_test.rs"
+
+[[bin]]
+name = "steam_test"
+path = "src/steam_test.rs"

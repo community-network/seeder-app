@@ -157,7 +157,7 @@ pub fn quit(
             Ok(_) => {
                 log::info!("closed the game");
 
-                if cfg.use_ea_desktop {
+                if cfg.launcher == structs::Launchers::EADesktop {
                     log::info!("waiting 5 seconds for game to close...");
                     sleep(Duration::from_secs(5));
                     log::info!("ready!");
@@ -176,7 +176,7 @@ pub fn quit(
     }
 
     // quit ea desktop to reset config
-    if cfg.use_ea_desktop {
+    if cfg.launcher == structs::Launchers::EADesktop {
         launchers::stop_ea_desktop();
     }
 }

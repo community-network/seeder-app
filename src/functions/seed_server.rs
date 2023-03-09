@@ -113,6 +113,7 @@ fn retry_check(
         actions::game::launch(cfg, current_game_id, "soldier", game_running, retry_launch);
     }
     // if game is running, check if in right server if option set
+    //set retries 0
     if game_info.is_running {
         retry_launch.store(0, atomic::Ordering::Relaxed);
 

@@ -13,13 +13,13 @@ pub struct BroadcastMessage {
 pub struct SeederConfig {
     pub group_id: String,
     pub game_location: String,
+    pub link2ea_location: String,
     pub hostname: String,
     pub allow_shutdown: bool,
     // when i'ts done seeding, join for messages
     pub send_messages: bool,
     pub usable_client: bool,
     pub fullscreen_anti_afk: bool,
-    pub use_ea_desktop: bool,
     pub message: String,
     pub message_server_name: String,
     pub message_start_time_utc: String,
@@ -28,6 +28,7 @@ pub struct SeederConfig {
     pub game: Games,
     pub seeder_name: String,
     pub find_player_max_retries: u32,
+    pub launcher: Launchers,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
@@ -57,13 +58,13 @@ impl ::std::default::Default for SeederConfig {
     fn default() -> Self {
         let mut cfg = Self {
             hostname: hostname::get().unwrap().into_string().unwrap(),
-            group_id: "0fda8e4c-5be3-11eb-b1da-cd4ff7dab605".into(),
+            group_id: "".into(),
             game_location: "".into(),
+            link2ea_location: "".into(),
             allow_shutdown: false,
             send_messages: false,
             usable_client: true,
             fullscreen_anti_afk: true,
-            use_ea_desktop: true,
             message: "Join our discord, we are recruiting: discord.gg/BoB".into(),
             message_server_name: "[BoB]#1 EU".into(),
             message_start_time_utc: "12:00".into(),
@@ -72,8 +73,10 @@ impl ::std::default::Default for SeederConfig {
             game: Games::from("bf1"),
             seeder_name: "".into(),
             find_player_max_retries: 15,
+            launcher: Launchers::from("ea_desktop"),
         };
         cfg.game_location = actions::game::find_game(&cfg);
+        cfg.link2ea_location = actions::launchers::find_link2ea();
         cfg
     }
 }
@@ -117,6 +120,32 @@ pub struct EaDesktopNewestFile {
     pub file_name: String,
     pub time: u64,
     pub location: String,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Eq, Clone, Debug)]
+pub enum Launchers {
+    EADesktop,
+    Origin,
+    Steam,
+}
+
+impl Launchers {
+    pub fn from(input: &str) -> Launchers {
+        match input {
+            "ea_desktop" => Launchers::EADesktop,
+            "origin" => Launchers::Origin,
+            "steam" => Launchers::Steam,
+            _ => Launchers::EADesktop,
+        }
+    }
+
+    pub fn window_name(&self) -> &'static str {
+        match self {
+            Launchers::EADesktop => "EA",
+            Launchers::Origin => "Origin",
+            Launchers::Steam => "Steam",
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Eq, Clone)]
@@ -182,6 +211,7 @@ impl Games {
                 "user.gamecommandline.origin.ofr.50.0001382",
                 "user.gamecommandline.origin.ofr.50.0001665",
                 "user.gamecommandline.origin.ofr.50.0001662",
+                "user.gamecommandline.origin.ofr.50.0001390",
             ],
         }
     }

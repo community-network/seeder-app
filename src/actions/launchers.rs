@@ -2,6 +2,7 @@ use crate::structs;
 use directories::BaseDirs;
 use ini::Ini;
 use regex::Regex;
+use registry::{Hive, Security};
 use std::ffi::OsStr;
 use std::fs;
 use std::iter::once;
@@ -14,11 +15,33 @@ use winapi::shared::windef::HWND__;
 use winapi::um::winuser::FindWindowW;
 
 pub fn launch_game(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
-    if cfg.use_ea_desktop {
-        log::info!("Launching game after EA Desktop startup...");
-        return launch_game_ea_desktop(cfg, game_id, role);
+    match cfg.launcher {
+        structs::Launchers::EADesktop => {
+            log::info!("Launching game after EA Desktop startup...");
+            launch_game_ea_desktop(cfg, game_id, role)
+        }
+        structs::Launchers::Origin => launch_game_origin(cfg, game_id, role),
+        structs::Launchers::Steam => launch_game_steam(cfg, game_id, role),
     }
-    launch_game_origin(cfg, game_id, role)
+}
+
+pub fn find_link2ea() -> String {
+    match Hive::LocalMachine.open(
+        "SOFTWARE\\Wow6432Node\\Electronic Arts\\EA Desktop",
+        Security::Read,
+    ) {
+        Ok(regkey) => match regkey.value("ClientPath") {
+            Ok(result) => result.to_string().replace("EADesktop.exe", "Link2EA.exe"),
+            Err(_) => {
+                log::warn!("Link2EA.exe not found in registry, using default Link2EA location.");
+                "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\Link2EA.exe".to_owned()
+            }
+        },
+        Err(_) => {
+            log::warn!("Link2EA.exe not found in registry, using default Link2EA location.");
+            "C:\\Program Files\\Electronic Arts\\EA Desktop\\EA Desktop\\Link2EA.exe".to_owned()
+        }
+    }
 }
 
 pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
@@ -158,28 +181,93 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
     }
 }
 
-pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
-    if cfg.use_ea_desktop {
-        return is_ea_desktop_running();
-    }
-    is_origin_running()
-}
-
-pub fn is_origin_running() -> structs::GameInfo {
-    unsafe {
-        let window: Vec<u16> = OsStr::new("Origin").encode_wide().chain(once(0)).collect();
-        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
-        let no_game: *mut HWND__ = ptr::null_mut();
-        structs::GameInfo {
-            is_running: window_handle != no_game,
-            game_process: window_handle,
+pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
+    let mut command = Command::new(cfg.link2ea_location.clone());
+    match cfg.game {
+        structs::Games::Bf4 => {
+            command.args([
+                "link2ea://launchgame/1238860?platform=steam&theme=bf4",
+                "-gameId",
+                game_id,
+                "-gameMode",
+                "MP",
+                "-role",
+                role,
+                "-asSpectator",
+                &(role == "spectator").to_string()[..],
+                "-joinWithParty",
+                "false",
+            ]);
         }
+        structs::Games::Bf1 => {
+            if cfg.usable_client {
+                command.args([
+                    "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            } else {
+                command.args([
+                    "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-Window.Fullscreen",
+                    "false",
+                    "-RenderDevice.MinDriverRequired",
+                    "false",
+                    "-Core.HardwareGpuBias",
+                    "-1",
+                    "-Core.HardwareCpuBias",
+                    "-1",
+                    "-Core.HardwareProfile",
+                    "Hardware_Low",
+                    "-RenderDevice.CreateMinimalWindow",
+                    "true",
+                    "-RenderDevice.NullDriverEnable",
+                    "true",
+                    "-Texture.LoadingEnabled",
+                    "false",
+                    "-Texture.RenderTexturesEnabled",
+                    "false",
+                    "-Client.TerrainEnabled",
+                    "false",
+                    "-Decal.SystemEnable",
+                    "false",
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "-requestState",
+                    "State_ClaimReservation",
+                    "-gameId",
+                    game_id,
+                    "-gameMode",
+                    "MP",
+                    "-role",
+                    role,
+                    "-asSpectator",
+                    &(role == "spectator").to_string()[..],
+                ]);
+            }
+        }
+    };
+    match command.spawn() {
+        Ok(_) => log::info!("game launched"),
+        Err(e) => log::error!("failed to launch game: {}", e),
     }
+    // bit slower than origin version
+    sleep(Duration::from_secs(10));
 }
 
-pub fn is_ea_desktop_running() -> structs::GameInfo {
+pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new("EA").encode_wide().chain(once(0)).collect();
+        let window: Vec<u16> = OsStr::new(cfg.launcher.window_name())
+            .encode_wide()
+            .chain(once(0))
+            .collect();
         let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
         let no_game: *mut HWND__ = ptr::null_mut();
         structs::GameInfo {
@@ -190,10 +278,11 @@ pub fn is_ea_desktop_running() -> structs::GameInfo {
 }
 
 pub fn restart_launcher(cfg: &structs::SeederConfig) {
-    if cfg.use_ea_desktop {
-        return restart_ea_desktop();
+    match cfg.launcher {
+        structs::Launchers::EADesktop => restart_ea_desktop(),
+        structs::Launchers::Origin => restart_origin(),
+        structs::Launchers::Steam => restart_ea_desktop(),
     }
-    restart_origin()
 }
 
 pub fn restart_ea_desktop() {

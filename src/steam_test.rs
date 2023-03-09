@@ -36,12 +36,10 @@ fn main() {
         message_stop_time_utc: "23:00".into(),
         message_timeout_mins: 8,
         game: structs::Games::from("bf1"),
-        seeder_name: "".into(),
-        find_player_max_retries: 15,
-        launcher: structs::Launchers::from("ea_desktop"),
+        launcher: structs::Launchers::from("steam"),
     };
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.link2ea_location = actions::launchers::find_link2ea();
 
-    actions::launchers::launch_game_ea_desktop(&cfg, "7821536030132", "soldier");
+    actions::launchers::launch_game_steam(&cfg, "8189927460830", "soldier");
 }

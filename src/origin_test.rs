@@ -25,11 +25,11 @@ fn main() {
         hostname: hostname::get().unwrap().into_string().unwrap(),
         group_id: "".into(),
         game_location: "".into(),
+        link2ea_location: "".into(),
         allow_shutdown: false,
         send_messages: false,
         usable_client: true,
         fullscreen_anti_afk: true,
-        use_ea_desktop: false,
         message: "Join our discord, we are recruiting: ...".into(),
         message_server_name: "".into(),
         message_start_time_utc: "12:00".into(),
@@ -38,8 +38,10 @@ fn main() {
         game: structs::Games::from("bf1"),
         seeder_name: "".into(),
         find_player_max_retries: 15,
+        launcher: structs::Launchers::from("origin"),
     };
     cfg.game_location = actions::game::find_game(&cfg);
+    cfg.link2ea_location = actions::launchers::find_link2ea();
 
     actions::launchers::launch_game_origin(&cfg, "7821536030132", "soldier");
 }
