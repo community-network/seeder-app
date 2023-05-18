@@ -64,6 +64,7 @@ fn main() {
                 message_timeout_mins: 8,
                 game: structs::Games::from("bf1"),
                 launcher: structs::Launchers::from("ea_desktop"),
+                endpoint: "https://manager-api.gametools.network".into()
             };
             cfg.game_location = actions::game::find_game(&cfg);
             cfg.link2ea_location = actions::launchers::find_link2ea();
@@ -110,7 +111,8 @@ fn main() {
         rejoin: true,
     };
     let connect_addr = format!(
-        "https://manager-api.gametools.network/api/getseeder?groupid={}&game={}",
+        "{}/api/getseeder?groupid={}&game={}",
+        cfg.endpoint,
         cfg.group_id,
         cfg.game.short_name()
     );

@@ -27,6 +27,7 @@ pub struct SeederConfig {
     pub message_timeout_mins: u32,
     pub game: Games,
     pub launcher: Launchers,
+    pub endpoint: String,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
@@ -70,6 +71,7 @@ impl ::std::default::Default for SeederConfig {
             message_timeout_mins: 8,
             game: Games::from("bf1"),
             launcher: Launchers::from("ea_desktop"),
+            endpoint: "https://manager-api.gametools.network".into()
         };
         cfg.game_location = actions::game::find_game(&cfg);
         cfg.link2ea_location = actions::launchers::find_link2ea();

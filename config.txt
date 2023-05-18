@@ -13,3 +13,4 @@ message_stop_time_utc = '23:00'
 message_timeout_mins = 8
 game = 'Bf1'
 launcher = 'EADesktop'
+endpoint = 'https://manager-api.gametools.network'

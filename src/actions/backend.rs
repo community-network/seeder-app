@@ -9,7 +9,7 @@ pub fn ping(
     origin_info: &structs::GameInfo,
     retry_launch: &Arc<AtomicU32>,
 ) {
-    match ureq::post("https://manager-api.gametools.network/api/seederinfo")
+    match ureq::post(format!("{}/api/seederinfo", cfg.endpoint).as_str())
         .timeout(Duration::new(10, 0))
         .send_json(ureq::json!({
             "groupid": cfg.group_id,

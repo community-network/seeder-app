@@ -281,7 +281,38 @@ pub fn restart_launcher(cfg: &structs::SeederConfig) {
     match cfg.launcher {
         structs::Launchers::EADesktop => restart_ea_desktop(),
         structs::Launchers::Origin => restart_origin(),
-        structs::Launchers::Steam => restart_ea_desktop(),
+        structs::Launchers::Steam => restart_steam_ea_desktop(),
+    }
+}
+
+pub fn restart_steam_ea_desktop() {
+    log::info!("Stopping EA Desktop");
+    stop_ea_desktop();
+    log::info!("Restarting Steam");
+    restart_steam();
+}
+
+pub fn restart_steam() {
+    let steam_process = winproc::Process::from_name("steam.exe");
+    let mut command = Command::new("C:\\Program Files (x86)\\Steam\\Steam.exe");
+    match steam_process {
+        Ok(mut process) => match process.terminate(1) {
+            Ok(_) => {
+                log::info!("Closed Steam");
+                sleep(Duration::from_secs(10));
+            }
+            Err(e) => log::error!("failed to close Steam (likely permissions): {}", e),
+        },
+        Err(_) => {
+            log::info!("Steam not found!");
+        }
+    }
+    match command.spawn() {
+        Ok(_) => {
+            log::info!("Steam launched");
+            sleep(Duration::from_secs(20));
+        }
+        Err(e) => log::error!("failed to launch Steam: {}", e),
     }
 }
 
