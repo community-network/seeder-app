@@ -46,6 +46,11 @@ pub struct CurrentServer {
     pub rejoin: bool,
 }
 
+#[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
+pub struct Error {
+    pub error: String,
+}
+
 #[derive(Debug)]
 pub struct GameInfo {
     pub is_running: bool,
@@ -71,7 +76,7 @@ impl ::std::default::Default for SeederConfig {
             message_timeout_mins: 8,
             game: Games::from("bf1"),
             launcher: Launchers::from("ea_desktop"),
-            endpoint: "https://manager-api.gametools.network".into()
+            endpoint: "https://manager-api.gametools.network".into(),
         };
         cfg.game_location = actions::game::find_game(&cfg);
         cfg.link2ea_location = actions::launchers::find_link2ea();

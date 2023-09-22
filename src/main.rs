@@ -64,7 +64,7 @@ fn main() {
                 message_timeout_mins: 8,
                 game: structs::Games::from("bf1"),
                 launcher: structs::Launchers::from("ea_desktop"),
-                endpoint: "https://manager-api.gametools.network".into()
+                endpoint: "https://manager-api.gametools.network".into(),
             };
             cfg.game_location = actions::game::find_game(&cfg);
             cfg.link2ea_location = actions::launchers::find_link2ea();
@@ -122,21 +122,33 @@ fn main() {
             .timeout(Duration::new(10, 0))
             .call()
         {
-            Ok(response) => match response.into_json::<structs::CurrentServer>() {
-                Ok(seeder_info) => {
-                    functions::seed_server::start(
-                        seeder_info,
-                        &mut old_seeder_info,
-                        &cfg,
-                        &game_running,
-                        &retry_launch,
-                        &message_running_clone,
-                    );
-                }
-                Err(e) => {
-                    log::error!("Failed to get info about server to join: {}", e);
-                    log::info!("reconnecting...");
-                }
+            Ok(response) => match response.header("type") {
+                Some(_) => match response.into_json::<structs::Error>() {
+                    Ok(error_return) => {
+                        log::error!("Error: {}", error_return.error);
+                        log::info!("retrying...");
+                    }
+                    Err(e) => {
+                        log::error!("Incorrect error return: {}", e);
+                        log::info!("retrying...");
+                    }
+                },
+                None => match response.into_json::<structs::CurrentServer>() {
+                    Ok(seeder_info) => {
+                        functions::seed_server::start(
+                            seeder_info,
+                            &mut old_seeder_info,
+                            &cfg,
+                            &game_running,
+                            &retry_launch,
+                            &message_running_clone,
+                        );
+                    }
+                    Err(e) => {
+                        log::error!("Failed to get info about server to join: {}", e);
+                        log::info!("reconnecting...");
+                    }
+                },
             },
             Err(e) => {
                 log::error!("Failed to connect to backend: {}", e);
