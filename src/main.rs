@@ -14,18 +14,24 @@ mod input;
 mod structs;
 
 fn main() {
-    Builder::new()
+    let mut builder = Builder::from_default_env();
+
+    builder
         .format(|buf, record| {
             writeln!(
                 buf,
-                "{} [{}] - {}",
+                "{} >> {} [{}] {}",
                 Local::now().format("%Y-%m-%dT%H:%M:%S"),
+                record.module_path().unwrap_or_default(),
                 record.level(),
                 record.args()
             )
         })
-        .filter(None, LevelFilter::Info)
+        // no need to debug api requests by default
+        .filter(Some("rustls"), LevelFilter::Info)
+        .filter(Some("ureq"), LevelFilter::Info)
         .init();
+    log::debug!("Running in debug mode!");
 
     // game_running based on api, 0 == leaving servers. 1 means joining servers.
     let game_running = Arc::new(atomic::AtomicU32::new(0));

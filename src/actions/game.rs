@@ -91,7 +91,7 @@ pub fn anti_afk(cfg: &structs::SeederConfig) {
     let game_info = is_running(cfg);
     if game_info.is_running {
         minimize(&game_info);
-        // check minimized here??
+        log::debug!("Running anti-afk script...");
         unsafe {
             let current_forground_window = GetForegroundWindow();
             let l_param = make_l_param(20, 20);
@@ -108,6 +108,7 @@ fn make_l_param(lo_word: i32, hi_word: i32) -> i32 {
 
 pub fn send_message(to_send: String, cfg: &structs::SeederConfig) {
     let game_info = is_running(cfg);
+    log::debug!("Sending message: {}", to_send);
     if game_info.is_running {
         unsafe {
             SetForegroundWindow(game_info.game_process);

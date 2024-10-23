@@ -1,48 +1,43 @@
-use chrono::Local;
-use env_logger::Builder;
-use log::LevelFilter;
-use std::io::Write;
+use std::sync::{atomic, Arc};
+
+use winapi::um::winuser::CF_DIB;
 mod actions;
 mod functions;
 mod input;
 mod structs;
 
 fn main() {
-    Builder::new()
-        .format(|buf, record| {
-            writeln!(
-                buf,
-                "{} [{}] - {}",
-                Local::now().format("%Y-%m-%dT%H:%M:%S"),
-                record.level(),
-                record.args()
-            )
-        })
-        .filter(None, LevelFilter::Info)
-        .init();
-
     let mut cfg = structs::SeederConfig {
         hostname: hostname::get().unwrap().into_string().unwrap(),
         group_id: "".into(),
         game_location: "".into(),
         link2ea_location: "".into(),
         allow_shutdown: false,
-        send_messages: false,
+        send_messages: true,
         usable_client: true,
         fullscreen_anti_afk: true,
-        message: "Join our discord, we are recruiting: ...".into(),
+        message: "test".into(),
         message_server_name: "".into(),
         message_start_time_utc: "12:00".into(),
         message_stop_time_utc: "23:00".into(),
-        message_timeout_mins: 8,
+        message_timeout_mins: 2,
         game: structs::Games::from("bf1"),
         launcher: structs::Launchers::from("steam"),
         endpoint: "https://manager-api.gametools.network".into(),
     };
+    let message_running = Arc::new(atomic::AtomicU32::new(1));
+
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.link2ea_location = actions::launchers::find_link2ea();
-    log::info!("{}", cfg.link2ea_location);
-    log::info!("{}", cfg.game_location);
+    let game_running = Arc::new(atomic::AtomicU32::new(0));
+    let message_timeout = Arc::new(atomic::AtomicU32::new(10));
+    let current_message_id = Arc::new(atomic::AtomicU32::new(0));
 
-    actions::launchers::launch_game_steam(&cfg, "9654489130726", "soldier");
+    functions::anti_afk::start(
+        &cfg,
+        &game_running,
+        &message_running,
+        &message_timeout,
+        &current_message_id,
+    )
 }
