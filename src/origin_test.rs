@@ -37,10 +37,10 @@ fn main() {
         message_timeout_mins: 8,
         game: structs::Games::from("bf1"),
         launcher: structs::Launchers::from("origin"),
-        endpoint: "https://manager-api.gametools.network".into()
+        endpoint: "https://manager-api.gametools.network".into(),
     };
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.link2ea_location = actions::launchers::find_link2ea();
 
-    actions::launchers::launch_game_origin(&cfg, "7821536030132", "soldier");
+    actions::launchers::launch_game_origin(&cfg, "9340024970330", "soldier");
 }

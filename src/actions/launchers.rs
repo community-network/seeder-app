@@ -118,12 +118,6 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
         structs::Games::Bf1 => {
             if cfg.usable_client {
                 command.args([
-                    "-webMode",
-                    "MP",
-                    "-Origin_NoAppFocus",
-                    "--activate-webhelper",
-                    "-requestState",
-                    "State_ClaimReservation",
                     "-gameId",
                     game_id,
                     "-gameMode",
@@ -175,6 +169,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
             }
         }
     };
+    log::debug!("command to join: {:#?}", command);
     match command.spawn() {
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
