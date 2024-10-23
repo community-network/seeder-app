@@ -2,6 +2,7 @@ use chrono::Local;
 use env_logger::Builder;
 use log::LevelFilter;
 use std::collections::HashMap;
+use std::env;
 use std::io::Write;
 use std::{
     sync::{atomic, Arc},
@@ -14,6 +15,9 @@ mod input;
 mod structs;
 
 fn main() {
+    if env::var("RUST_LOG").is_err() {
+        env::set_var("RUST_LOG", "info")
+    }
     let mut builder = Builder::from_default_env();
 
     builder
