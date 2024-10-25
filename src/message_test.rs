@@ -24,6 +24,8 @@ fn main() {
         game: structs::Games::from("bf1"),
         launcher: structs::Launchers::from("steam"),
         endpoint: "https://manager-api.gametools.network".into(),
+        anti_afk_timeout_secs: 120,
+        backend_check_timeout_secs: 10,
     };
     let message_running = Arc::new(atomic::AtomicU32::new(1));
 

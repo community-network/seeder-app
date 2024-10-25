@@ -28,6 +28,8 @@ pub struct SeederConfig {
     pub game: Games,
     pub launcher: Launchers,
     pub endpoint: String,
+    pub anti_afk_timeout_secs: u64,
+    pub backend_check_timeout_secs: u64,
 }
 
 #[derive(Deserialize, PartialEq, Eq, Clone, Debug)]
@@ -77,6 +79,8 @@ impl ::std::default::Default for SeederConfig {
             game: Games::from("bf1"),
             launcher: Launchers::from("ea_desktop"),
             endpoint: "https://manager-api.gametools.network".into(),
+            anti_afk_timeout_secs: 120,
+            backend_check_timeout_secs: 10,
         };
         cfg.game_location = actions::game::find_game(&cfg);
         cfg.link2ea_location = actions::launchers::find_link2ea();

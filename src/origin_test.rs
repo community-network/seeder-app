@@ -38,6 +38,8 @@ fn main() {
         game: structs::Games::from("bf1"),
         launcher: structs::Launchers::from("origin"),
         endpoint: "https://manager-api.gametools.network".into(),
+        anti_afk_timeout_secs: 120,
+        backend_check_timeout_secs: 10,
     };
     cfg.game_location = actions::game::find_game(&cfg);
     cfg.link2ea_location = actions::launchers::find_link2ea();

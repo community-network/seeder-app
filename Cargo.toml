@@ -1,7 +1,7 @@
 [package]
 name = "bf-seeder"
 description = ""
-version = "0.3.5"
+version = "0.3.8"
 edition = "2018"
 authors = ["iiTzArcur <arcur@gametools.network>"]
 default-run = "bf-seeder"

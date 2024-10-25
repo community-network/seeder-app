@@ -53,5 +53,5 @@ pub fn start(
             message_timeout.store(timeout + 1, atomic::Ordering::Relaxed);
         }
     }
-    sleep(Duration::from_secs(120));
+    sleep(Duration::from_secs(cfg.anti_afk_timeout_secs));
 }

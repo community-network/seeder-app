@@ -1,7 +1,7 @@
-group_id = 'aac4c3fa-8a72-11ec-80d7-0a58a9feac02'
-game_location = 'C:\Program Files (x86)\Steam\steamapps\common\Battlefield 1\bf1.exe'
+group_id = "80aa1f90-03af-11ee-a011-02420a0009e7"
+game_location = 'C:\Program Files (x86)\Steam\steamapps\common\Battlefield 1\\bf1.exe'
 link2ea_location = 'C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\Link2EA.exe'
-hostname = "JOBSE-PC"
+hostname = "jobse-pc"
 allow_shutdown = false
 send_messages = false
 usable_client = true
@@ -14,3 +14,5 @@ message_timeout_mins = 8
 game = "Bf1"
 launcher = "Steam"
 endpoint = "https://manager-api.gametools.network"
+anti_afk_timeout_secs = 120
+backend_check_timeout_secs = 10
