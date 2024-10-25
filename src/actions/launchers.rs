@@ -118,6 +118,12 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
         structs::Games::Bf1 => {
             if cfg.usable_client {
                 command.args([
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "--activate-webhelper",
+                    "-requestState",
+                    "State_ClaimReservation",
                     "-gameId",
                     game_id,
                     "-gameMode",
@@ -198,6 +204,12 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
             if cfg.usable_client {
                 command.args([
                     "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "--activate-webhelper",
+                    "-requestState",
+                    "State_ClaimReservation",
                     "-gameId",
                     game_id,
                     "-gameMode",
@@ -210,6 +222,12 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
             } else {
                 command.args([
                     "link2ea://launchgame/1238840?platform=steam&theme=bf1",
+                    "-webMode",
+                    "MP",
+                    "-Origin_NoAppFocus",
+                    "--activate-webhelper",
+                    "-requestState",
+                    "State_ClaimReservation",
                     "-Window.Fullscreen",
                     "false",
                     "-RenderDevice.MinDriverRequired",
