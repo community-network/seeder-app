@@ -1,4 +1,4 @@
-use crate::structs;
+use crate::structs::{self, Games};
 use directories::BaseDirs;
 use ini::Ini;
 use regex::Regex;
@@ -44,6 +44,32 @@ pub fn find_link2ea() -> String {
     }
 }
 
+pub fn start_wait_timer(cfg: &structs::SeederConfig) {
+    let mut timeout = 0;
+    let mut anticheat_running = false;
+    let mut running = false;
+    while !running {
+        if timeout > 10 {
+            // give up on to many tries waiting and continue anyway
+            log::warn!("waiting to long, continueing..");
+            break;
+        }
+
+        log::debug!("Testing if the game started");
+
+        let start_info = super::game::is_running(cfg);
+        running = start_info.is_running;
+        if cfg.game == Games::Bf1 && start_info.anticheat_launcher_running && !anticheat_running {
+            log::info!("Anticheat is running");
+            timeout = 0;
+            anticheat_running = true;
+        }
+        sleep(Duration::from_secs(5));
+        timeout += 1;
+    }
+    log::info!("Game started");
+}
+
 pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
     // it needs to restart launcher
     stop_ea_desktop();
@@ -78,19 +104,7 @@ pub fn launch_game_ea_desktop(cfg: &structs::SeederConfig, game_id: &str, role: 
         Err(e) => log::error!("failed to launch game: {}", e),
     }
 
-    let mut timeout = 0;
-    let mut not_running = true;
-    while not_running {
-        if timeout > 10 {
-            // give up on to many tries waiting and continue anyway
-            log::warn!("waiting to long, continueing..");
-            break;
-        }
-
-        not_running = !super::game::is_running(cfg).is_running;
-        sleep(Duration::from_secs(5));
-        timeout += 1;
-    }
+    start_wait_timer(cfg);
 
     // reset config after gamelaunch
     edit_ea_desktop(cfg, "".to_string());
@@ -180,6 +194,7 @@ pub fn launch_game_origin(cfg: &structs::SeederConfig, game_id: &str, role: &str
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
     }
+    start_wait_timer(cfg);
 }
 
 pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str) {
@@ -271,21 +286,21 @@ pub fn launch_game_steam(cfg: &structs::SeederConfig, game_id: &str, role: &str)
         Ok(_) => log::info!("game launched"),
         Err(e) => log::error!("failed to launch game: {}", e),
     }
-    // bit slower than origin version
-    sleep(Duration::from_secs(10));
+    start_wait_timer(cfg);
 }
 
 pub fn is_launcher_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new(cfg.launcher.window_name())
+        let launcher_window: Vec<u16> = OsStr::new(cfg.launcher.window_name())
             .encode_wide()
             .chain(once(0))
             .collect();
-        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
+        let launcher_window_handle = FindWindowW(std::ptr::null_mut(), launcher_window.as_ptr());
         let no_game: *mut HWND__ = ptr::null_mut();
         structs::GameInfo {
-            is_running: window_handle != no_game,
-            game_process: window_handle,
+            is_running: launcher_window_handle != no_game,
+            game_process: launcher_window_handle,
+            anticheat_launcher_running: false,
         }
     }
 }

@@ -46,5 +46,5 @@ fn main() {
     log::info!("{}", cfg.link2ea_location);
     log::info!("{}", cfg.game_location);
 
-    actions::launchers::launch_game_steam(&cfg, "9654542690814", "soldier");
+    actions::launchers::launch_game_steam(&cfg, "9660974470904", "soldier");
 }

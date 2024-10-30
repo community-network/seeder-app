@@ -57,6 +57,7 @@ pub struct Error {
 pub struct GameInfo {
     pub is_running: bool,
     pub game_process: *mut HWND__,
+    pub anticheat_launcher_running: bool,
 }
 
 /// `SeederConfig` implements `Default`
@@ -132,7 +133,7 @@ impl Launchers {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum Games {
     Bf4,
     Bf1,

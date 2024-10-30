@@ -133,15 +133,18 @@ pub fn send_message(to_send: String, cfg: &structs::SeederConfig) {
 
 pub fn is_running(cfg: &structs::SeederConfig) -> structs::GameInfo {
     unsafe {
-        let window: Vec<u16> = OsStr::new(cfg.game.window_name())
+        let game_window: Vec<u16> = OsStr::new(cfg.game.window_name())
             .encode_wide()
             .chain(once(0))
             .collect();
-        let window_handle = FindWindowW(std::ptr::null_mut(), window.as_ptr());
+        let game_window_handle = FindWindowW(std::ptr::null_mut(), game_window.as_ptr());
+        let anticheat_process = winproc::Process::from_name("EAAntiCheat.GameServiceLauncher.exe");
+
         let no_game: *mut HWND__ = ptr::null_mut();
         structs::GameInfo {
-            is_running: window_handle != no_game,
-            game_process: window_handle,
+            is_running: game_window_handle != no_game,
+            game_process: game_window_handle,
+            anticheat_launcher_running: anticheat_process.is_ok(),
         }
     }
 }
