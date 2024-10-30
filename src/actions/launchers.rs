@@ -335,18 +335,25 @@ pub fn restart_ea_desktop() {
 }
 
 pub fn stop_ea_desktop() {
-    let origin_process = winproc::Process::from_name("EADesktop.exe");
-    match origin_process {
-        Ok(mut process) => match process.terminate(1) {
-            Ok(_) => {
-                log::info!("Closed EA Desktop");
-                sleep(Duration::from_secs(10));
+    match winproc::Process::all() {
+        Ok(processes) => {
+            for mut process in processes {
+                for item in ["EADesktop.exe", "EACefSubProcess.exe"].iter() {
+                    if process.name().unwrap_or_default() == item.to_string() {
+                        match process.terminate(1) {
+                            Ok(_) => {
+                                log::info!("Closed {}", item);
+                                sleep(Duration::from_secs(10));
+                            }
+                            Err(e) => {
+                                log::error!("failed to close {} (likely permissions): {}", item, e)
+                            }
+                        }
+                    }
+                }
             }
-            Err(e) => log::error!("failed to close EA Desktop (likely permissions): {}", e),
-        },
-        Err(_) => {
-            log::info!("EA desktop not found!");
         }
+        Err(e) => log::error!("failed to access running processes, {:#?}", e),
     }
 }
 
